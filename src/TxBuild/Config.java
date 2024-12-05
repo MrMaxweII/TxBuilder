@@ -63,6 +63,7 @@ public static void load()
 			GUI_FeeSettings.feeFrom		.setSelectedIndex(jo.getInt("feeFrom"));
 			GUI_FeeSettings.sliderMax	.setSelectedIndex(jo.getInt("feeSliderMax"));
 			GUI_FeeSettings.sliderMin	.setSelectedIndex(jo.getInt("feeSliderMin"));
+			GUI_ImportCSV.lbl_file		.setText(jo.getString("fileNameAdressList"));
 			for(int i=0;i<GUI.comboBoxList.length;i++) {GUI.comboBoxList[i]=String.valueOf(i+1);}
 			GUI.cBox_inCount	.setModel(new DefaultComboBoxModel(GUI.comboBoxList));	
 			GUI.cBox_outCount	.setModel(new DefaultComboBoxModel(GUI.comboBoxList));		
@@ -101,7 +102,7 @@ public static void save()
 		jo.put("feeFrom", 	GUI_FeeSettings.feeFrom.getSelectedIndex());
 		jo.put("feeSliderMax", GUI_FeeSettings.sliderMax.getSelectedIndex());
 		jo.put("feeSliderMin", GUI_FeeSettings.sliderMin.getSelectedIndex());
-
+		jo.put("fileNameAdressList", GUI_ImportCSV.lbl_file.getText());
 		
 		
 		BufferedWriter br = new BufferedWriter(new FileWriter(fileName));

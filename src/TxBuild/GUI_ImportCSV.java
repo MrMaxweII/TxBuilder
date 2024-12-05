@@ -9,7 +9,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
@@ -19,6 +23,7 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JMenuBar;
@@ -27,23 +32,27 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.OverlayLayout;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import BTClib3001.Calc;
+import BTClib3001.Convert;
 import RPC.ConnectRPC;
 
 
 
 /********************************************************************************************************************
-*											 Autor: Mr. Maxwell   							vom 29.01.2024			*
+*											 Autor: Mr. Maxwell   							vom 02.12.2024			*
 *	Die GUI (JDialog). Importiert die csv Datei mit den eigenen kontrollieten Bitcoin-Adressen.						*
 *	Zeigt alle Adressen an, die Beträge enthalten und zeigt die gesamt-Summe an										*
 ********************************************************************************************************************/
@@ -58,16 +67,19 @@ public class GUI_ImportCSV extends JDialog
 	private JProgressBar 	progressBar 	= new JProgressBar();							// Wartebalklen unten, wenn der Core die Transaktionen sucht.
 	private JTextField 		txt_totalValue	= new JTextField();								// Gesamter Ausgangs-Betrag
 	private JButton 		btn_open 		= new JButton("open csv file");					// öffnet den FileCooser zum laden der csv-Datei
+	private JButton 		btn_open_crypt 	= new JButton("open crypt file");				// öffnet den FileCooser zum entschlüsseln und laden der csv-Datei
+	private JButton 		btn_encrypt 	= new JButton("encrypt csv file");				// öffnet den FileCooser und verschlüsselt die Bitcoin-Address-List.csv Datei
 	private JButton 		btn_cancel 		= new JButton("cancel");						// Abbruch Load
 	private JButton 		btn_input		= new JButton("As source address");				// Button: Als Eingabe setzten
 	private JButton 		btn_output		= new JButton("As destination address");		// Button: Als Ausgabe setzten
 	private JLabel			lbl_progress	= new JLabel(new ImageIcon("icons/load.gif"));	// Animiertes progress gif. drehendes Bitcoin-Symbol
+	public static JLabel 	lbl_file 		= new JLabel("user.dir");						// Speicherort der csv.Datei wird in Config gespeichert.
 
 
 	public GUI_ImportCSV(int x, int y) 
 	{
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setTitle("Import Bitcoin Address csv file");
+		setTitle("Import Bitcoin Address file");
 		setBounds(x, y, 800, 450);
 		setModal(true);
 
@@ -76,10 +88,8 @@ public class GUI_ImportCSV extends JDialog
 		JPanel 		pnl_2 		= new JPanel();
 		JPanel 		pnl_3 		= new JPanel();
 		JLayeredPane pnl_lp		= new JLayeredPane();
-		JLabel 		lbl_file 	= new JLabel("user.dir");					// Speicherort der csv.Datei 
 		JTextPane  	lbl_info 	= new JTextPane();							// Beschreibung
 
-		
 		lbl_info		.setForeground(GUI.color4);
 		txt_meld		.setForeground(Color.RED);
 		lbl_file		.setBackground(GUI.color1);
@@ -94,11 +104,13 @@ public class GUI_ImportCSV extends JDialog
 		btn_input		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		btn_output		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		btn_open		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
+		btn_open_crypt	.setFont(new Font("Century Gothic", Font.PLAIN, 12));
+		btn_encrypt		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
+
 		btn_cancel		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		lbl_file		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		
 		lbl_info		.setText(" This is where the csv file is imported, which contains your own Bitcoin addresses.\r\n Once imported, the total amount of all controlled Bitcoin addresses will be displayed.\r\n They can directly choose from which addresses they want to send or receive.");
-		lbl_file		.setText("user.dir");
 
 		txt_totalValue	.setBorder(new TitledBorder(new LineBorder(GUI.color4), "Total Value", TitledBorder.LEADING, TitledBorder.TOP, GUI.font2, GUI.color3));
 		menuBar			.setBorder(new LineBorder(GUI.color1));
@@ -108,16 +120,21 @@ public class GUI_ImportCSV extends JDialog
 		btn_input		.setPreferredSize(new Dimension(160, 22));
 		btn_output		.setPreferredSize(new Dimension(160, 22));
 		progressBar		.setPreferredSize(new Dimension(146, 13));
-		btn_open		.setPreferredSize(new Dimension(110, 20));			
+		btn_open		.setPreferredSize(new Dimension(110, 20));	
+		btn_open_crypt	.setPreferredSize(new Dimension(110, 20));	
+		btn_encrypt		.setPreferredSize(new Dimension(110, 20));			
 		btn_cancel		.setPreferredSize(new Dimension(110, 20));			
 
 		btn_input		.setMargin(new Insets(0, 0, 0, 0));
 		btn_output		.setMargin(new Insets(0, 0, 0, 0));
-		btn_open		.setMargin(new Insets(0, 0, 0, 0));							
+		btn_open		.setMargin(new Insets(0, 0, 0, 0));		
+		btn_open_crypt	.setMargin(new Insets(0, 0, 0, 0));	
+		btn_encrypt	.setMargin(new Insets(0, 0, 0, 0));							
 		btn_cancel		.setMargin(new Insets(0, 0, 0, 0));							
 
 		lbl_info		.setEditable(false);
 		txt_totalValue	.setEditable(false);
+		txt_meld		.setEditable(false);
 		btn_input		.setEnabled(false);
 		btn_output		.setEnabled(false);
 		progressBar		.setVisible(false);
@@ -141,6 +158,8 @@ public class GUI_ImportCSV extends JDialog
 		setJMenuBar(menuBar);
 		menuBar			.add(pnl_menu);
 		pnl_menu		.add(btn_open);
+		pnl_menu		.add(btn_open_crypt);
+		pnl_menu		.add(btn_encrypt);	
 		pnl_menu		.add(btn_cancel);
 		pnl_menu		.add(lbl_file);
 		pnl_lp			.add(lbl_progress);
@@ -162,9 +181,99 @@ public class GUI_ImportCSV extends JDialog
 		
 // ----------------------------------------------------------- Actions --------------------------------------------------------------------------
 
+	
+		
+		// Öffnet mit dem JFileChooser die BTCAddressList.crypt.
+		btn_open_crypt.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{			
+				txt_meld.setText("");
+				String userDir = System.getProperty("user.home");			
+				JFileChooser chooser = new JFileChooser(userDir +"/Desktop");
+				chooser.setFileFilter(new FileNameExtensionFilter("BTCAddressList.crypt", "crypt"));			
+				chooser.setCurrentDirectory(new File(lbl_file.getText()));							
+				int button = chooser.showOpenDialog(scrollPane);		
+				if(button==0)																					
+				{
+					lbl_file.setText(chooser.getSelectedFile().getAbsolutePath());
+					try 
+					{
+						FileInputStream br = new FileInputStream(lbl_file.getText());						
+						byte[] chiffre = br.readAllBytes();
+						br.close();	
+						String pw = JOptionPane.showInputDialog(getContentPane(), "Passwort", "Passwort", 3);										
+						if(pw==null) return;
+						byte[] key = Convert.hexStringToByteArray(Calc.getHashSHA256(pw));
+						byte[] decrypt_b =  Crypt.decrypt(chiffre, key, "AES");
+						byte[][] erg = Crypt.removeAndCheckSHA256Checksum(decrypt_b);
+						byte[] data_b  = erg[1];
+						boolean richtig = Convert.byteToBool(erg[2][0]);
+						
+						while(!richtig)
+						{
+							java.awt.Toolkit.getDefaultToolkit().beep();
+							pw = JOptionPane.showInputDialog(getContentPane(), "Passwort false!\nPasswort:", "Passwort", 0);
+							if(pw==null) return;
+							key = Convert.hexStringToByteArray(Calc.getHashSHA256(pw));
+							decrypt_b =  Crypt.decrypt(chiffre, key, "AES");
+							erg = Crypt.removeAndCheckSHA256Checksum(decrypt_b);
+							data_b  = erg[1];
+							richtig = Convert.byteToBool(erg[2][0]);					
+						}
+						
+						
+						// Öffnet ein neues JFrame zum anzeigen der CSC-Adress-Liste
+						int eingabe = JOptionPane.showConfirmDialog(getContentPane(), "Show CSV file of all addresses?", "show address List as CSV?", 2);
+						if(eingabe == 0)
+						{
+							JFrame fm 		= new JFrame();
+							JScrollPane	sp	= new JScrollPane();
+							JTextArea txt 	= new JTextArea();
+							fm.setTitle("CSV address list");
+							fm.setBounds(getContentPane().getX()+5, getContentPane().getY()+5, 1100, 800);
+							txt.setEditable(false);
+							txt.setFont(GUI.font4);
+							txt.setText(new String(data_b, "UTF-8"));
+							sp.setViewportView(txt);
+							fm.getContentPane().add(sp);
+							fm.setModalExclusionType(ModalExclusionType.APPLICATION_EXCLUDE);
+							fm.setVisible(true);
+						}
+						
+						
+						
+						// Der Datensatz ist durch umkodierungen (nicht meine) mit Sonderzeichen verschmutzt!
+						// Hier Wird ein "Sonderzeichen" = 0a welches einen Zeilenumbruch bewirkt, "hard" aus dem Datensatz enterfen.
+						// Dieses Zeichen kommt vermutlich durch umcodierung des ursprünglichen "\n" zustande. Und wird dann zusätzlich in den datensatzt gedrückt.
+						// Dieses kann nicht auf üblichem Weg im Text-String entfernt werden!!! Vermute Java-Bug! (Keine Change mit String.replaceAll(...)!!! Dieses Zeichen gibt es dort nicht!
+						String data_hexString = Convert.byteArrayToHexString(data_b);
+						data_hexString = data_hexString.replaceAll("0a","");
+						data_hexString = data_hexString.replaceAll("00","");				// "00" Wird auch entfern! Dies wurde als AES-Padding hinten angefügt.	
+						data_b = Convert.hexStringToByteArray(data_hexString);
+						// -------------------------------------------------------- Ende entfernung ------------------------------------------------------------------------------------------
+						
+						String str = new String(data_b, "UTF-8");							// entschlüsselter und bereinigter Datensatz
+						str.replaceAll("\n","");											// Zeilenumbrüche werden entfernt				
+						str.replaceAll(" ","");												// Leerzeichen werden entfernt				
+						String[] addr = str.split(",");										// String wird in String-Array an der Stelle "," Aufgteilt.										
+				        loadTxfromCore(addr);
+					} 
+					catch (Exception e1) 
+					{
+						txt_meld.setText(e1.getMessage());
+						e1.printStackTrace();
+					}			
+				}			
+			}
+		});	
 		
 		
-	// Öffnet mit dem JFileChooser die sig.Tx.
+		
+		
+		
+		
+	// Öffnet mit dem JFileChooser die BTCAddressList.csv.
 	btn_open.addActionListener(new ActionListener() 
 	{
 		public void actionPerformed(ActionEvent e) 
@@ -200,6 +309,68 @@ public class GUI_ImportCSV extends JDialog
 			}			
 		}
 	});
+	
+	
+	
+	
+	
+	
+	// Verschlüsselt BTCAddressList.csv.    
+	btn_encrypt.addActionListener(new ActionListener() 
+	{
+		public void actionPerformed(ActionEvent e) 
+		{			
+			txt_meld.setText("");
+			String userDir = System.getProperty("user.home");			
+			JFileChooser chooser = new JFileChooser(userDir +"/Desktop");
+			chooser.setFileFilter(new FileNameExtensionFilter("BTCAddressList.csv", "csv"));			
+			chooser.setCurrentDirectory(new File(lbl_file.getText()));							
+			int button = chooser.showOpenDialog(scrollPane);		
+			if(button==0)																					
+			{
+				lbl_file.setText(chooser.getSelectedFile().getAbsolutePath());
+				try 
+				{
+					String str = "";
+					BufferedReader br = new BufferedReader(new FileReader(new File(lbl_file.getText())));
+					while(br.ready())
+					{
+						str = str + br.readLine() + "\n";
+					}
+					br.close();
+					
+					String pw = JOptionPane.showInputDialog(getContentPane(), "Passwort mit dem verschlüsselt werden soll:", "Passwort", 3);					
+					byte[] key = Convert.hexStringToByteArray(Calc.getHashSHA256(pw));
+					byte[] schiffre = encryptAES(str.getBytes("UTF-8") , key, "AES");
+					
+					JFileChooser chooser2 = new JFileChooser(userDir +"/Desktop");
+					FileFilter filter = new FileNameExtensionFilter(".crypt", "crypt");
+					chooser2.setFileFilter(filter);	
+					chooser2.setAcceptAllFileFilterUsed(false);
+					chooser2.setSelectedFile(new File("BTCAddressList.crypt"));
+					int button2 = chooser2.showSaveDialog(getContentPane());
+					if(button2==0)																					
+					{
+						String file = chooser2.getSelectedFile().getAbsolutePath();	
+						FileOutputStream fo = new FileOutputStream(file);
+						fo.write(schiffre);
+						fo.close();				
+					}
+				} 
+				catch (Exception e1) 
+				{
+					txt_meld.setText(e1.getMessage());
+					e1.printStackTrace();
+				}			
+			}			
+		}
+	});
+	
+	
+	
+	
+	
+	
 	
 	
 
@@ -312,6 +483,15 @@ public class GUI_ImportCSV extends JDialog
 // --------------------------------------------------------------- private Methoden ----------------------------------------------------------
 	
 	
+	// Verschlüsselt die Bitcoin-Adressliste mit AES
+	private static byte[] encryptAES(byte[] text, byte[] key, String name) throws Exception
+	{
+		byte[] b = Crypt.padding16(text);
+		b = Crypt.addSHA256Checksum(b);
+		return Crypt.encrypt(b, key , "AES");
+	}
+	
+	
 	
 	// Hier wird die Tabelle erstellt und in die GUI gesetzt
 	private void setTable(String[][] str_tab) throws Exception
@@ -347,9 +527,10 @@ public class GUI_ImportCSV extends JDialog
 	{						
 		txt_totalValue.setText("");
 	 	btn_open.setVisible(false);
+	 	btn_open_crypt.setVisible(false);
+	 	btn_encrypt.setVisible(false);
 		btn_cancel.setVisible(true);	
-		txt_meld.setText("");
-		
+		txt_meld.setText(addr.length + " addresses found");	
 		TxBuildAction.ip 	 = GUI_CoreSettings.txt_ip.getText();
 		TxBuildAction.port = Integer.valueOf(GUI_CoreSettings.txt_port.getText());
 		TxBuildAction.name = GUI_CoreSettings.txt_uName.getText();
@@ -375,6 +556,8 @@ public class GUI_ImportCSV extends JDialog
 					txt_meld.setText(ex.getMessage());
 				}
 				btn_open.setVisible(true);
+			 	btn_open_crypt.setVisible(true);
+			 	btn_encrypt.setVisible(true);
 				btn_cancel.setVisible(false);
 			}
 		});
