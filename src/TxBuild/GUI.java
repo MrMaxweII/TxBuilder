@@ -59,7 +59,7 @@ import RPC.ConnectRPC;
 
 
 /***********************************************************************************************************************************************
-*				   											 Autor: Mr. Maxwell   							vom 16.03.2024						*
+*				   											 Autor: Mr. Maxwell   							vom 04.12.2024						*
 *	Die GUI für den TxBuilder																													*
 *************************************************************************************************************************************************/
 
@@ -95,7 +95,7 @@ public class GUI extends JFrame
 	
 	
 	public final static String 	progName		= "TxBuilder";									// Program Name		
-	public final static String	version 		= "V1.1.0";										// Version der Anwendung
+	public final static String	version 		= "V1.2.1";										// Version der Anwendung
 	public final static String	autor 			= "Mr. Maxwell";								// Name Autor
 	public final static byte[] MAINNET  = {(byte) 0xf9,(byte) 0xbe,(byte) 0xb4,(byte) 0xD9};
 	public final static byte[] TESTNET3 = {(byte) 0x0b,(byte) 0x11,(byte) 0x09,(byte) 0x07};
@@ -137,7 +137,7 @@ public class GUI extends JFrame
 	public static Color color1 	= new Color(255,244,230); 										// Farbe Hintergrund
 	public static Color color3 	= new Color(120,120,120); 										// Farbe Text grau Feldbeschreibungen
 	public static Color color4 	= new Color(247, 147, 26); 										// Farbe Linien (BTC-Farbe)
-	public static Color color5	= new Color(255,255,200);												// Farbe für Fee-Regulator
+	public static Color color5	= new Color(255,255,200);										// Farbe für Fee-Regulator
 	public static Font	font1	= new Font("SansSerif", Font.PLAIN, 10); 						// Font für Rahmenbeschriftung klein
 	public static Font	font2	= new Font("SansSerif", Font.PLAIN, 11); 						// Font für Rahmenbeschriftung normal
 	public static Font	font3	= new Font("SansSerif", Font.PLAIN, 14); 						// Font für Rahmenbeschriftung groß
@@ -153,7 +153,7 @@ public class GUI extends JFrame
 	{		
 		JMenuBar 	menuBar 	= new JMenuBar();										// Hauptmenüleiste ganz oben
 		JMenu 		menu_info 	= new JMenu("Info");									// Information über dieses Programm
-		JMenuItem 	mItem_import= new JMenuItem("Import BTCAddressList.csv");			// Zum Importieren einer großen Menge von Bitcoin-Adressen als CSV-Datei. Um Verfügbare Betrage zu finden.
+		JMenuItem 	mItem_import= new JMenuItem("Bitcoin Address List");				// Zum Importieren einer großen Menge von Bitcoin-Adressen als CSV-Datei. Um Verfügbare Betrage zu finden.
 		JMenuItem 	mItem_publis= new JMenuItem("Send signed transaction");				// Menüpunkt Publish Tx
 		JMenuItem 	mItem_txLoad= new JMenuItem("Get transaction from blockchain");		// zum Laden einer Transaktion aus der Blockchain
 		JMenuItem 	mItem_txJSON= new JMenuItem("Get JSON from transacion");			// Konvertiert die Transaktion in ein JSON-Format
@@ -659,6 +659,7 @@ public class GUI extends JFrame
 	});	
 	
 	
+		
 	
 	// Öffnet den Tx-Publish Dialog
 	mItem_publis.addActionListener(new ActionListener() 
