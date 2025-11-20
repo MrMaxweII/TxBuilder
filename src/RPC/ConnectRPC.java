@@ -12,7 +12,7 @@ import org.json.JSONObject;
 
 
 /********************************************************************************************************************
-*	Version 1.4					   					 Autor: Mr. Maxwell   							vom 01.02.2024	*
+*	Version 1.5					   					 Autor: Mr. Maxwell   							vom 09.11.2025	*
 *	Hier wird die RPC-Verbindung zum Bitcoin-Core über Port 8332 hergestellt.										*
 *	- Links: https://developer.bitcoin.org/reference/rpc/index.html													*
 *	- https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list												*
@@ -281,6 +281,30 @@ public class ConnectRPC
 	
 	
 	
+	/** Gibte eine RawTx zurück unter angabe eines bekannten Blockes
+	@param TxID wird als Hex-String übergeben.
+	@param json wenn true, dann erfolgt die Ausgabe als JSON-Transaktion, wenn false dann als RAW-Transaktion
+	@param blockHash Block-Hash in der sich diese Transaktion befindet
+	@return RawTx oder Fehler-Meldung  **/
+	public JSONObject getrawtransaction(String txID, boolean json, String blockHash) throws Exception
+	{
+		JSONArray jaMain = new JSONArray();
+		jaMain.put(txID);
+		jaMain.put(json);
+		jaMain.put(blockHash);
+		String str = get("getrawtransaction", jaMain);
+		try 
+		{
+			return new JSONObject(str);
+		} 
+		catch (JSONException e) 
+		{
+			if(str.length()!=0) throw new JSONException(str);
+			else 				throw new JSONException(e);
+		}	
+	}
+	
+	
 	
 	/** Gibt verschiedene statistische Informationen über einen Block zurück. Z.B. Infos über Tx-Gebühren etc.
 	@param nr = Block-Nummer. Wird -1 übergeben, dann wird der letzte Block verwendet!
@@ -328,6 +352,30 @@ public class ConnectRPC
 			if(str.length()!=0) throw new JSONException(str);
 			else 				throw new JSONException(e);
 		}
-	}	
+	}
+	
+	
+	
+	/** Gibt den Block-Hash des Blockes mit der Nummer "nr" zurück
+	@param nr = Block-Nummer. 0 = Genesisblock
+	@return JSON-Object mit dem Blockhash  **/
+	public JSONObject getblockhash(int nr) throws Exception
+	{
+		JSONArray ja = new JSONArray();
+		ja.put(nr);
+		String str = get("getblockhash", ja);
+		try 
+		{
+			return new JSONObject(str);
+		} 
+		catch (JSONException e) 
+		{
+			if(str.length()!=0) throw new JSONException(str);
+			else 				throw new JSONException(e);
+		}
+	}
+	
+	
+	
 	
 }
