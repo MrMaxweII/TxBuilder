@@ -85,6 +85,7 @@ public class GUI extends JFrame
 					frame.setBounds(posX, posY, 1068, 500);
 					btn_testNet.doClick();
 					btn_testNet.doClick();
+					GUI_CoreSettings.changesAuthenticationMethod();
 					txt_info.setText(GUI_InfoText.infoText); 
 				} 
 				catch (Exception e) {e.printStackTrace();}
@@ -95,7 +96,7 @@ public class GUI extends JFrame
 	
 	
 	public final static String 	progName		= "TxBuilder";									// Program Name		
-	public final static String	version 		= "V1.2.1";										// Version der Anwendung
+	public final static String	version 		= "V1.2.4";										// Version der Anwendung
 	public final static String	autor 			= "Mr. Maxwell";								// Name Autor
 	public final static byte[] MAINNET  = {(byte) 0xf9,(byte) 0xbe,(byte) 0xb4,(byte) 0xD9};
 	public final static byte[] TESTNET3 = {(byte) 0x0b,(byte) 0x11,(byte) 0x09,(byte) 0x07};
@@ -133,6 +134,7 @@ public class GUI extends JFrame
 	public static JSlider 		sliderFee 		= new JSlider();								// Der Slider für die Tx-Gebühren
 	public static int 			posX = 0;
 	public static int 			posY = 0;               	
+	public static int 			countSearchBlocks = 100;										// Anzahl der Blöcke die bei "Get Transaktion from Blockchain" rückwirkend durchsucht werden
 	public static String[] 		comboBoxList 	= new String[100];								// Die beiden Combo-Boxen für die In- und Outputs werden mit diesen Elementen initialisiert
 	public static Color color1 	= new Color(255,244,230); 										// Farbe Hintergrund
 	public static Color color3 	= new Color(120,120,120); 										// Farbe Text grau Feldbeschreibungen
@@ -703,7 +705,59 @@ public class GUI extends JFrame
 				ConnectRPC peer = new ConnectRPC(ip, port, name, pw);
 				peer.setTimeOut(Integer.parseInt(GUI_CoreSettings.txt_timeOut.getText()));
 				JSONObject jo = peer.getrawtransaction(str);	
-				if( (jo.optJSONObject("error"))!=null )	throw new Exception(jo.getJSONObject("error").toString(1));		// Wenn Error BitcoinCore
+				if( (jo.optJSONObject("error"))!=null ) 
+				{
+					if((jo.getJSONObject("error").getInt("code") == -5))
+					{
+						// Wenn Bitcoin Error "code":-5, auftritt, und der Hash stimmt, dann fehlt dem Core die Datenbank "-txindex" Dadurch kann er keine Transaktionen anhand dem Tx-Hash finden!
+						// Aber er kann sie finden, wenn der Blockhash mit angegeben wird. 
+						// Also werden in dem Fall einfach die letzen 100 oder 1000 Blöcke durchsucht.
+
+						Thread t = new Thread(new Runnable() 
+						{
+							@Override
+							public void run() 
+							{
+								lbl_progress.setVisible(true);
+								frame.setEnabled(false);
+								txt_meld.setText(countSearchBlocks+" blocks are searched! Please wait!");
+								try
+								{							
+									JSONObject jo1 = new JSONObject(peer.get("getblockcount", null));											// getblockcount = Gibt die letze Blocknummer an.
+									int last_blockNr = jo1.getInt("result");
+									for(int i=0;i<countSearchBlocks;i++)																		// Anzahl der suchschleifen in denen Blöcke zurück gesucht werden
+									{
+										String last_blockHash =   peer.getblockhash(last_blockNr).getString("result");							// getblockhash "Block-Nummer" Zeigt den Blockhash mit dieser nummer an							
+										JSONObject jo2 = peer.getrawtransaction(str, false, last_blockHash);
+										if( (jo2.optJSONObject("error"))==null )
+										{
+											Transaktion sigTx = new Transaktion(Convert.hexStringToByteArray(jo2.getString("result")),0); 
+											byte[] magic;
+											if(btn_testNet.isSelected()) magic = TESTNET3;
+											else						 magic = MAINNET;
+											TxPrinter tx = new TxPrinter(magic, sigTx, getX()+5, getY()+30);
+											tx.setModal(false);
+											tx.setVisible(true);
+											System.out.println(peer.decoderawtransaction(jo2.getString("result")).toString(1));
+											txt_meld.setText("");
+											break;
+										}
+										last_blockNr--;
+										if(i==countSearchBlocks-1) txt_meld.setText(jo2.getJSONObject("error").toString(1));	
+									}
+								}
+								catch(Exception e){txt_meld.setText(e.getMessage());}	
+								frame.setEnabled(true);
+								lbl_progress.setVisible(false);	
+							}
+						});
+						t.start();
+					}
+					else
+					{
+						throw new Exception(jo.getJSONObject("error").toString(1));													// Bei irgendeinem anderem Bitcoin Fehler
+					}	
+				}
 				else
 				{
 					Transaktion sigTx = new Transaktion(Convert.hexStringToByteArray(jo.getString("result")),0); 
