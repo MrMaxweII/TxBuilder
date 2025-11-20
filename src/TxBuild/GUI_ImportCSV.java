@@ -29,6 +29,7 @@ import javax.swing.JLayeredPane;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -52,7 +53,7 @@ import RPC.ConnectRPC;
 
 
 /********************************************************************************************************************
-*											 Autor: Mr. Maxwell   							vom 02.12.2024			*
+*											 Autor: Mr. Maxwell   							vom 22.02.2025			*
 *	Die GUI (JDialog). Importiert die csv Datei mit den eigenen kontrollieten Bitcoin-Adressen.						*
 *	Zeigt alle Adressen an, die Beträge enthalten und zeigt die gesamt-Summe an										*
 ********************************************************************************************************************/
@@ -202,8 +203,13 @@ public class GUI_ImportCSV extends JDialog
 						FileInputStream br = new FileInputStream(lbl_file.getText());						
 						byte[] chiffre = br.readAllBytes();
 						br.close();	
-						String pw = JOptionPane.showInputDialog(getContentPane(), "Passwort", "Passwort", 3);										
-						if(pw==null) return;
+		
+						String pw = null;
+						JPasswordField pf = new JPasswordField();
+						int ok = JOptionPane.showConfirmDialog(getContentPane(), pf, "Passwort", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+						if (ok == JOptionPane.OK_OPTION) pw = new String(pf.getPassword());	
+						else return;
+						
 						byte[] key = Convert.hexStringToByteArray(Calc.getHashSHA256(pw));
 						byte[] decrypt_b =  Crypt.decrypt(chiffre, key, "AES");
 						byte[][] erg = Crypt.removeAndCheckSHA256Checksum(decrypt_b);
@@ -213,8 +219,10 @@ public class GUI_ImportCSV extends JDialog
 						while(!richtig)
 						{
 							java.awt.Toolkit.getDefaultToolkit().beep();
-							pw = JOptionPane.showInputDialog(getContentPane(), "Passwort false!\nPasswort:", "Passwort", 0);
-							if(pw==null) return;
+							ok = JOptionPane.showConfirmDialog(getContentPane(), pf, "Passwort false!   Passwort:", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+							if (ok == JOptionPane.OK_OPTION) pw = new String(pf.getPassword());	
+							else return;
+
 							key = Convert.hexStringToByteArray(Calc.getHashSHA256(pw));
 							decrypt_b =  Crypt.decrypt(chiffre, key, "AES");
 							erg = Crypt.removeAndCheckSHA256Checksum(decrypt_b);
