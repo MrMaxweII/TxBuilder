@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 import javax.swing.Box;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
@@ -38,6 +38,8 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.OverlayLayout;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileFilter;
@@ -46,14 +48,14 @@ import javax.swing.table.DefaultTableModel;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import BTClib3001.Calc;
-import BTClib3001.Convert;
 import RPC.ConnectRPC;
+import lib3001.crypt.Calc;
+import lib3001.crypt.Convert;
 
 
 
 /********************************************************************************************************************
-*											 Autor: Mr. Maxwell   							vom 22.02.2025			*
+*											 Autor: Mr. Maxwell   							vom 28.12.2025			*
 *	Die GUI (JDialog). Importiert die csv Datei mit den eigenen kontrollieten Bitcoin-Adressen.						*
 *	Zeigt alle Adressen an, die Beträge enthalten und zeigt die gesamt-Summe an										*
 ********************************************************************************************************************/
@@ -62,35 +64,55 @@ import RPC.ConnectRPC;
 public class GUI_ImportCSV extends JDialog 
 {
 	
-	private JTable 			table;															// Die Tabelle mit den Bitcon-Adressen				
-	private JScrollPane  	scrollPane 		= new JScrollPane();
-	private JTextPane 		txt_meld 		= new JTextPane();								// Ausgabe-Fenster mit allen Meldungen
-	private JProgressBar 	progressBar 	= new JProgressBar();							// Wartebalklen unten, wenn der Core die Transaktionen sucht.
-	private JTextField 		txt_totalValue	= new JTextField();								// Gesamter Ausgangs-Betrag
-	private JButton 		btn_open 		= new JButton("open csv file");					// öffnet den FileCooser zum laden der csv-Datei
-	private JButton 		btn_open_crypt 	= new JButton("open crypt file");				// öffnet den FileCooser zum entschlüsseln und laden der csv-Datei
-	private JButton 		btn_encrypt 	= new JButton("encrypt csv file");				// öffnet den FileCooser und verschlüsselt die Bitcoin-Address-List.csv Datei
-	private JButton 		btn_cancel 		= new JButton("cancel");						// Abbruch Load
-	private JButton 		btn_input		= new JButton("As source address");				// Button: Als Eingabe setzten
-	private JButton 		btn_output		= new JButton("As destination address");		// Button: Als Ausgabe setzten
-	private JLabel			lbl_progress	= new JLabel(new ImageIcon("icons/load.gif"));	// Animiertes progress gif. drehendes Bitcoin-Symbol
-	public static JLabel 	lbl_file 		= new JLabel("user.dir");						// Speicherort der csv.Datei wird in Config gespeichert.
+	private GUI_ImportCSV		dialog;
+	private JTable 				table;															// Die Tabelle mit den Bitcon-Adressen				
+	private JScrollPane  		scrollPane 		= new JScrollPane();
+	private JTextPane 			txt_meld 		= new JTextPane();								// Ausgabe-Fenster mit allen Meldungen
+	private JProgressBar 		progressBar 	= new JProgressBar();							// Wartebalklen unten, wenn der Core die Transaktionen sucht.
+	private JTextField 			txt_totalValue	= new JTextField();								// Gesamter Ausgangs-Betrag
+	private JButton 			btn_open 		= new JButton();								// öffnet den FileCooser zum laden der csv-Datei
+	private JButton 			btn_open_crypt 	= new JButton();								// öffnet den FileCooser zum entschlüsseln und laden der csv-Datei
+	private JButton 			btn_encrypt 	= new JButton();								// öffnet den FileCooser und verschlüsselt die Bitcoin-Address-List.csv Datei
+	private JButton 			btn_cancel 		= new JButton();								// Abbruch Load
+	private JButton 			btn_input		= new JButton("As source address");				// Button: Als Eingabe setzten
+	private JButton 			btn_output		= new JButton("As destination address");		// Button: Als Ausgabe setzten
+	private JLabel				lbl_progress	= new JLabel(MyIcons.load_gif);					// Animiertes progress gif. drehendes Bitcoin-Symbol
+	public static JTextField 	lbl_file 		= new JTextField("user.dir");					// Speicherort der csv.Datei wird in Config gespeichert.
+	private static JTextPane  	lbl_info 		= new JTextPane();								// Beschreibungs-Text
 
 
 	public GUI_ImportCSV(int x, int y) 
 	{
+		dialog = this;
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setTitle("Import Bitcoin Address file");
-		setBounds(x, y, 800, 450);
+		setTitle(GUI.t.t("Bitcoin Address List"));
+		setBounds(x, y, 820, 350);
+		setMinimumSize(new Dimension(810,350));
 		setModal(true);
-
+		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
+		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());		
+			
 		JMenuBar 	menuBar 	= new JMenuBar();
 		JPanel 		pnl_menu 	= new JPanel();
 		JPanel 		pnl_2 		= new JPanel();
 		JPanel 		pnl_3 		= new JPanel();
 		JLayeredPane pnl_lp		= new JLayeredPane();
-		JTextPane  	lbl_info 	= new JTextPane();							// Beschreibung
+		
+		btn_open		.setText(GUI.t.t("open csv file"));
+		btn_open_crypt	.setText(GUI.t.t("open crypt file"));
+		btn_encrypt		.setText(GUI.t.t("encrypt csv file"));
+		btn_cancel		.setText(GUI.t.t("cancel"));
+		btn_input		.setText(GUI.t.t("As source address"));
+		btn_output		.setText(GUI.t.t("As destination address"));
+		lbl_info		.setText(GUI.t.t("This is where the csv file is imported, which contains your own Bitcoin addresses.\n Once imported, the total amount of all controlled Bitcoin addresses will be displayed.\n They can directly choose from which addresses they want to send or receive."));
 
+		btn_open		.setToolTipText(GUI.t.t("ToolTipText_btn_open"));
+		btn_open_crypt	.setToolTipText(GUI.t.t("ToolTipText_btn_open_crypt"));
+		btn_encrypt		.setToolTipText(GUI.t.t("ToolTipText_btn_encrypt"));
+		btn_input		.setToolTipText(GUI.t.t("ToolTipText_btn_input"));
+		btn_output		.setToolTipText(GUI.t.t("ToolTipText_btn_output"));		
+		
+		menuBar			.setBackground(GUI.color1);
 		lbl_info		.setForeground(GUI.color4);
 		txt_meld		.setForeground(Color.RED);
 		lbl_file		.setBackground(GUI.color1);
@@ -107,32 +129,31 @@ public class GUI_ImportCSV extends JDialog
 		btn_open		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		btn_open_crypt	.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		btn_encrypt		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
-
-		btn_cancel		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
-		lbl_file		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
+		btn_cancel		.setFont(new Font("Century Gothic", Font.PLAIN, 12));		
+		lbl_file		.setFont(new Font("Century Gothic", Font.PLAIN, 10));
 		
-		lbl_info		.setText(" This is where the csv file is imported, which contains your own Bitcoin addresses.\r\n Once imported, the total amount of all controlled Bitcoin addresses will be displayed.\r\n They can directly choose from which addresses they want to send or receive.");
-
-		txt_totalValue	.setBorder(new TitledBorder(new LineBorder(GUI.color4), "Total Value", TitledBorder.LEADING, TitledBorder.TOP, GUI.font2, GUI.color3));
-		menuBar			.setBorder(new LineBorder(GUI.color1));
+		txt_totalValue	.setBorder(new TitledBorder(new LineBorder(GUI.color4), GUI.t.t("Total Value (BTC)"), TitledBorder.LEADING, TitledBorder.TOP, GUI.font2, GUI.color3));
 		scrollPane		.setBorder(new LineBorder(GUI.color1, 7));
 		progressBar		.setBorder(null);
-		
-		btn_input		.setPreferredSize(new Dimension(160, 22));
-		btn_output		.setPreferredSize(new Dimension(160, 22));
+		lbl_file		.setBorder(null);
+		lbl_info		.setBorder(new EmptyBorder(5,5,5,5));
+			
+		menuBar			.setPreferredSize(new Dimension(500, 65));
+		btn_open		.setPreferredSize(new Dimension(250, 22));	
+		btn_open_crypt	.setPreferredSize(new Dimension(250, 22));	
+		btn_encrypt		.setPreferredSize(new Dimension(250, 22));			
+		btn_cancel		.setPreferredSize(new Dimension(120, 22));	
+		btn_input		.setPreferredSize(new Dimension(240, 22));
+		btn_output		.setPreferredSize(new Dimension(240, 22));
 		progressBar		.setPreferredSize(new Dimension(146, 13));
-		btn_open		.setPreferredSize(new Dimension(110, 20));	
-		btn_open_crypt	.setPreferredSize(new Dimension(110, 20));	
-		btn_encrypt		.setPreferredSize(new Dimension(110, 20));			
-		btn_cancel		.setPreferredSize(new Dimension(110, 20));			
 
 		btn_input		.setMargin(new Insets(0, 0, 0, 0));
-		btn_output		.setMargin(new Insets(0, 0, 0, 0));
-		btn_open		.setMargin(new Insets(0, 0, 0, 0));		
-		btn_open_crypt	.setMargin(new Insets(0, 0, 0, 0));	
-		btn_encrypt	.setMargin(new Insets(0, 0, 0, 0));							
-		btn_cancel		.setMargin(new Insets(0, 0, 0, 0));							
-
+		btn_output		.setMargin(new Insets(0, 0, 0, 0));	
+		btn_open		.setMargin(new Insets(0, 0, 0, 0));
+		btn_open_crypt	.setMargin(new Insets(0, 0, 0, 0));
+		btn_encrypt		.setMargin(new Insets(0, 0, 0, 0));	
+		btn_cancel		.setMargin(new Insets(0, 0, 0, 0));
+		
 		lbl_info		.setEditable(false);
 		txt_totalValue	.setEditable(false);
 		txt_meld		.setEditable(false);
@@ -152,16 +173,19 @@ public class GUI_ImportCSV extends JDialog
 
 		pnl_lp			.setLayout(new OverlayLayout(pnl_lp));
 		pnl_2			.setLayout(new BorderLayout(0, 0));
-		pnl_menu		.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+		pnl_menu		.setLayout(new FlowLayout(FlowLayout.LEFT,5,5));
 		pnl_3			.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
 		txt_totalValue	.setHorizontalAlignment(SwingConstants.RIGHT);
-
+			
 		setJMenuBar(menuBar);
 		menuBar			.add(pnl_menu);
 		pnl_menu		.add(btn_open);
+		pnl_menu		.add(Box.createHorizontalStrut(7));
 		pnl_menu		.add(btn_open_crypt);
+		pnl_menu		.add(Box.createHorizontalStrut(7));
 		pnl_menu		.add(btn_encrypt);	
 		pnl_menu		.add(btn_cancel);
+		pnl_menu		.add(Box.createHorizontalStrut(7));
 		pnl_menu		.add(lbl_file);
 		pnl_lp			.add(lbl_progress);
 		pnl_lp			.add(scrollPane);
@@ -169,9 +193,9 @@ public class GUI_ImportCSV extends JDialog
 		pnl_2			.add(txt_meld, BorderLayout.CENTER);
 		pnl_2			.add(progressBar, BorderLayout.SOUTH);
 		pnl_3			.add(btn_input);
-		pnl_3			.add(Box.createHorizontalStrut(50));
+		pnl_3			.add(Box.createHorizontalStrut(40));
 		pnl_3			.add(btn_output);
-		pnl_3			.add(Box.createHorizontalStrut(165));
+		pnl_3			.add(Box.createHorizontalStrut(100));
 		pnl_3			.add(txt_totalValue);
 		getContentPane().setLayout(new BorderLayout(0, 0));
 		getContentPane().add(lbl_info, BorderLayout.NORTH);	
@@ -206,7 +230,7 @@ public class GUI_ImportCSV extends JDialog
 		
 						String pw = null;
 						JPasswordField pf = new JPasswordField();
-						int ok = JOptionPane.showConfirmDialog(getContentPane(), pf, "Passwort", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+						int ok = JOptionPane.showConfirmDialog(getContentPane(), pf, GUI.t.t("Password"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 						if (ok == JOptionPane.OK_OPTION) pw = new String(pf.getPassword());	
 						else return;
 						
@@ -219,7 +243,7 @@ public class GUI_ImportCSV extends JDialog
 						while(!richtig)
 						{
 							java.awt.Toolkit.getDefaultToolkit().beep();
-							ok = JOptionPane.showConfirmDialog(getContentPane(), pf, "Passwort false!   Passwort:", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+							ok = JOptionPane.showConfirmDialog(getContentPane(), pf, GUI.t.t("Passwort false!   Passwort:"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 							if (ok == JOptionPane.OK_OPTION) pw = new String(pf.getPassword());	
 							else return;
 
@@ -228,11 +252,11 @@ public class GUI_ImportCSV extends JDialog
 							erg = Crypt.removeAndCheckSHA256Checksum(decrypt_b);
 							data_b  = erg[1];
 							richtig = Convert.byteToBool(erg[2][0]);					
-						}
+						}				
 						
-						
-						// Öffnet ein neues JFrame zum anzeigen der CSC-Adress-Liste
-						int eingabe = JOptionPane.showConfirmDialog(getContentPane(), "Show CSV file of all addresses?", "show address List as CSV?", 2);
+						// Öffnet ein neues JFrame zum anzeigen der CSV-Adress-Liste
+						int eingabe = JOptionPane.showConfirmDialog(getContentPane(), GUI.t.t("show address List as CSV?"), "Show CSV file?", 0);
+						if(eingabe <  0) return;
 						if(eingabe == 0)
 						{
 							JFrame fm 		= new JFrame();
@@ -248,8 +272,7 @@ public class GUI_ImportCSV extends JDialog
 							fm.setModalExclusionType(ModalExclusionType.APPLICATION_EXCLUDE);
 							fm.setVisible(true);
 						}
-						
-						
+											
 						
 						// Der Datensatz ist durch umkodierungen (nicht meine) mit Sonderzeichen verschmutzt!
 						// Hier Wird ein "Sonderzeichen" = 0a welches einen Zeilenumbruch bewirkt, "hard" aus dem Datensatz enterfen.
@@ -275,9 +298,6 @@ public class GUI_ImportCSV extends JDialog
 				}			
 			}
 		});	
-		
-		
-		
 		
 		
 		
@@ -320,9 +340,6 @@ public class GUI_ImportCSV extends JDialog
 	
 	
 	
-	
-	
-	
 	// Verschlüsselt BTCAddressList.csv.    
 	btn_encrypt.addActionListener(new ActionListener() 
 	{
@@ -347,7 +364,7 @@ public class GUI_ImportCSV extends JDialog
 					}
 					br.close();
 					
-					String pw = JOptionPane.showInputDialog(getContentPane(), "Passwort mit dem verschlüsselt werden soll:", "Passwort", 3);					
+					String pw = JOptionPane.showInputDialog(getContentPane(), GUI.t.t("Password to be used for encryption:"), GUI.t.t("Password"), 3);					
 					byte[] key = Convert.hexStringToByteArray(Calc.getHashSHA256(pw));
 					byte[] schiffre = encryptAES(str.getBytes("UTF-8") , key, "AES");
 					
@@ -373,12 +390,6 @@ public class GUI_ImportCSV extends JDialog
 			}			
 		}
 	});
-	
-	
-	
-	
-	
-	
 	
 	
 
@@ -415,8 +426,6 @@ public class GUI_ImportCSV extends JDialog
 	
 	
 	
-	
-	
 	// Übernimmt markierte Zeilen und schreibt sie in den Input der Haupt-GUI
 	btn_input.addActionListener(new ActionListener() 
 	{
@@ -426,7 +435,7 @@ public class GUI_ImportCSV extends JDialog
 			{
 				txt_meld.setText("");
 				int[] auswahl = table.getSelectedRows();
-				if(auswahl.length<=0)  	JOptionPane.showMessageDialog(scrollPane, "No marked addresses.\nMark the desired addresses!\nUse the keyboard shortcuts: <Ctrl+a> or <Ctrl+select> or<Shift+select> etc.", "Info", 1);   
+				if(auswahl.length<=0)  	JOptionPane.showMessageDialog(scrollPane, GUI.t.t("No marked addresses.\nMark the desired addresses!\nUse the keyboard shortcuts: <Ctrl+a> or <Ctrl+select> or<Shift+select> etc."), "Info", 1);   
 				else
 				{
 					GUI.cBox_inCount.setSelectedIndex(auswahl.length-1);
@@ -460,7 +469,7 @@ public class GUI_ImportCSV extends JDialog
 			{
 				txt_meld.setText("");
 				int[] auswahl = table.getSelectedRows();
-				if(auswahl.length<=0)  	JOptionPane.showMessageDialog(scrollPane, "No marked addresses.\nMark the desired addresses!\nUse the keyboard shortcuts: <Ctrl+a> or <Ctrl+select> or<Shift+select> etc.", "Info", 1);   
+				if(auswahl.length<=0)  	JOptionPane.showMessageDialog(scrollPane, GUI.t.t("No marked addresses.\nMark the desired addresses!\nUse the keyboard shortcuts: <Ctrl+a> or <Ctrl+select> or<Shift+select> etc."), "Info", 1);   
 				else
 				{
 					GUI.cBox_outCount.setSelectedIndex(auswahl.length-1);
@@ -504,13 +513,14 @@ public class GUI_ImportCSV extends JDialog
 	// Hier wird die Tabelle erstellt und in die GUI gesetzt
 	private void setTable(String[][] str_tab) throws Exception
 	{
-		String[] ueberschrift= new String[] { "BTC Addrress", "Value"};
+		String[] ueberschrift= new String[] { GUI.t.t("BTC-Address"), GUI.t.t("Value")};
 		table 	= new JTable();
 		table.setEnabled(true);
 		table.setFont(GUI.font4);
 		table.setForeground(GUI.color3);
-		table.setSelectionForeground(new Color(120,0,0));
-		// table.setSelectionBackground(Color.MAGENTA);  // Geht nicht, Kann nicht verändert werden!
+		table.setBackground(GUI.color1);
+		//table.setSelectionForeground(new Color(255, 147, 26));
+		table.setSelectionBackground(new Color(225,204,190));  // Geht nur wenn die Tabelle nicht Transparent ist (setOpaque(true))
 		table.getTableHeader().setBackground(GUI.color3);
 		table.getTableHeader().setForeground(GUI.color1);
 		table.setSurrendersFocusOnKeystroke(true);
@@ -522,10 +532,21 @@ public class GUI_ImportCSV extends JDialog
 		table.getColumnModel().getColumn(1).setPreferredWidth(50);
 		table.setGridColor(GUI.color4);
 		table.setRowHeight(20);
-		table.setOpaque(false);
-		table.setCellSelectionEnabled(true);
-		((JComponent) table.getDefaultRenderer(Object.class)).setOpaque(false);
-		scrollPane	.setViewportView(table);
+		table.setOpaque(true);
+		//table.setCellSelectionEnabled(false); // Damit wird nur eine Zelle Markiert.
+		((JComponent) table.getDefaultRenderer(Object.class)).setOpaque(true);  // Macht die gesamte Tabele Transparent/oder nicht
+		scrollPane	.setViewportView(table);	
+		
+		SwingUtilities.invokeLater(new Runnable() 		// Passt die Größe des Dialoges nachträglich an die Anzahl der Zeilen in der Tabelle an.
+		{
+			@Override
+			public void run() 
+			{			
+				int screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height; 				
+				int maxHeight = screenHeight - dialog.getY() - 50;
+				dialog.setSize(dialog.getWidth(), Math.min(table.getHeight() + 250, maxHeight));		
+			}
+		});
 	}		
 	
 	
@@ -539,10 +560,10 @@ public class GUI_ImportCSV extends JDialog
 	 	btn_encrypt.setVisible(false);
 		btn_cancel.setVisible(true);	
 		txt_meld.setText(addr.length + " addresses found");	
-		TxBuildAction.ip 	 = GUI_CoreSettings.txt_ip.getText();
+		TxBuildAction.ip   = GUI_CoreSettings.txt_ip.getText();
 		TxBuildAction.port = Integer.valueOf(GUI_CoreSettings.txt_port.getText());
 		TxBuildAction.name = GUI_CoreSettings.txt_uName.getText();
-		TxBuildAction.pw 	 = GUI_CoreSettings.txt_pw.getText();
+		TxBuildAction.pw   = GUI_CoreSettings.txt_pw.getText();
 		
 		Thread thread1 = new Thread(new Runnable() 
 		{
@@ -637,12 +658,13 @@ public class GUI_ImportCSV extends JDialog
 				{
 					btn_input		.setEnabled(true);
 					btn_output		.setEnabled(true);
+					lbl_info		.setText(GUI.t.t("Mark one or more lines and select them as the input or output address."));
 				}
 				else 
 				{
 					btn_input		.setEnabled(false);
 					btn_output		.setEnabled(false);
-					txt_meld.setText("No address with an available amount found.");
+					txt_meld.setText(GUI.t.t("No address with an available amount found."));
 				}
 			}
 		}   

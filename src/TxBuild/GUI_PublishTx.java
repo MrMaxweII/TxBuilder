@@ -3,16 +3,19 @@ import java.awt.Color;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JTextPane;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-import BTClib3001.Convert;
-import BTClib3001.Transaktion;
-import BTClib3001.TxPrinter;
+
 import RPC.ConnectRPC;
+import lib3001.btc.Transaktion;
+import lib3001.btc.TxPrinter;
+import lib3001.crypt.Convert;
+import lib3001.qrCode.QrCapture;
+
 import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import javax.swing.JScrollPane;
@@ -34,44 +37,50 @@ import javax.swing.JOptionPane;
 
 
 /********************************************************************************************************************
-*	V1.1							 Autor: Mr. Maxwell   							vom 29.10.2023					*
+*	V1.4							 Autor: Mr. Maxwell   							vom 28.12.2025					*
 *	Die GUI (JDialog). Sendet signierte Transaktionen in das Netzwerk per RPC										*
 ********************************************************************************************************************/
+
 
 
 public class GUI_PublishTx extends JDialog 
 {
 	
-	public final static byte[] MAINNET = {(byte) 0xf9,(byte) 0xbe,(byte) 0xb4,(byte) 0xD9};
-	public final static byte[] TESTNET3 = {(byte) 0x0b,(byte) 0x11,(byte) 0x09,(byte) 0x07};
-	
-	JDialog frame;							// Wird für den QR-Code benötigt.
+	public final static byte[] MAINNET  = {(byte) 0xf9,(byte) 0xbe,(byte) 0xb4,(byte) 0xD9};	// MainNet  Magic
+	public final static byte[] TESTNET3 = {(byte) 0x0b,(byte) 0x11,(byte) 0x09,(byte) 0x07};	// TestNet3 Magic
+	public static JLabel lbl_file_sigTx = new JLabel("user.dir"); 								// Das Label des Speicherorts der SigTx
+	JDialog frame;																				// Wird für den QR-Code benötigt.
 
+	
+	
 	public GUI_PublishTx(int x, int y) 
 	{
 		frame = this;
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setTitle("Publish Transaction");
+		setTitle(GUI.t.t("Send signed transaction"));
 		setBounds(x, y, 1040, 450);
+		setMinimumSize(new Dimension(500,250));
 		setModal(true);
-
+		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
+		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
+		
 		JTextPane  	lbl_info 	= new JTextPane();
 		JTextPane 	txt_meld 	= new JTextPane();
-		JLabel 		lbl_file_sigTx = new JLabel("user.dir"); // Das Label des Speicherorts der SigTx
 		JTextArea 	txt_tx 		= new JTextArea();
-		JButton 	btn_scanQR 	= new JButton("scan QR code");
-		JButton 	btn_openTx 	= new JButton("open Tx");
-		JButton 	btn_showTx 	= new JButton("show Tx");
-		JButton 	btn_send 	= new JButton("send Tx");
+		JButton 	btn_scanQR 	= new JButton(GUI.t.t("scan QR code"));
+		JButton 	btn_openTx 	= new JButton(GUI.t.t("open Tx"));
+		JButton 	btn_showTx 	= new JButton(GUI.t.t("show Tx"));
+		JButton 	btn_send 	= new JButton(GUI.t.t("send Tx"));
 		JPanel 		pnl_1 		= new JPanel();
 		JPanel 		pnl_2 		= new JPanel();
 		JPanel 		pnl_3 		= new JPanel();
 		JScrollPane scrollPane 	= new JScrollPane();
 
+		lbl_file_sigTx	.setBounds(95, 6, 1000, 18);
+		
 		lbl_info		.setForeground(GUI.color4);
 		btn_send		.setForeground(Color.RED);
 		txt_meld		.setForeground(Color.RED);
-
 		txt_tx			.setBackground(Color.WHITE);
 		lbl_info		.setBackground(GUI.color1);
 		txt_meld		.setBackground(GUI.color1);
@@ -82,21 +91,24 @@ public class GUI_PublishTx extends JDialog
 		btn_openTx		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		btn_showTx		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		btn_send		.setFont(new Font("Century Gothic", Font.PLAIN, 12));
-		lbl_file_sigTx	.setFont(new Font("Century Gothic", Font.PLAIN, 12));
+		lbl_file_sigTx	.setFont(new Font("Century Gothic", Font.PLAIN, 10));
 		txt_tx			.setFont(new Font("Consolas", Font.PLAIN, 11));
 
-		lbl_file_sigTx	.setBounds(95, 6, 1000, 18);
+		lbl_info		.setText(GUI.t.t("Signed transactions can be sent to the network here.\nThis action can never be reprimanded.\nCheck the transaction very carefully!"));	
 
-		lbl_info		.setText("Signed transactions can be sent to the network here.\r\nThis action can never be reprimanded.\r\nCheck the transaction very carefully!");
-		lbl_file_sigTx	.setText("user.dir");	
-
+		lbl_info		.setBorder(new EmptyBorder(7,10,7,7));
 		scrollPane		.setBorder(null);
-		txt_tx			.setBorder(new TitledBorder(new LineBorder(GUI.color4), 	"Insert signed transactions into this field",	TitledBorder.LEADING, 	TitledBorder.TOP, 		GUI.font2, GUI.color3));
-		
-		btn_scanQR		.setPreferredSize(new Dimension(110, 19));
-		btn_openTx		.setPreferredSize(new Dimension(85, 19));
-		btn_showTx		.setPreferredSize(new Dimension(85, 19));
-		btn_send		.setPreferredSize(new Dimension(85, 19));
+		txt_tx			.setBorder(new TitledBorder(new LineBorder(GUI.color4), GUI.t.t("Insert signed transactions into this field"), TitledBorder.LEADING, TitledBorder.TOP, GUI.font2, GUI.color3));
+
+		btn_scanQR		.setToolTipText(GUI.t.t("ToolTipText_btn_scanQR"));
+		btn_openTx		.setToolTipText(GUI.t.t("ToolTipText_btn_openTx"));
+		btn_showTx		.setToolTipText(GUI.t.t("ToolTipText_btn_showTx"));
+		btn_send		.setToolTipText(GUI.t.t("ToolTipText_btn_send"));
+				
+		btn_scanQR		.setPreferredSize(new Dimension(220, 25));
+		btn_openTx		.setPreferredSize(new Dimension(220, 25));
+		btn_showTx		.setPreferredSize(new Dimension(220, 25));
+		btn_send		.setPreferredSize(new Dimension(220, 25));
 
 		btn_scanQR		.setMargin(new Insets(0, 0, 0, 0));
 		btn_openTx		.setMargin(new Insets(0, 0, 0, 0));
@@ -149,7 +161,7 @@ public class GUI_PublishTx extends JDialog
 						QrCapture qr = new QrCapture(frame,"Scan Sign Transaction", getX()+50, getY()+80);	
 						String p2 = qr.getResult();
 						qr.close();								
-						if(p2.equals("")) throw new IOException("User abort");								
+						if(p2.equals("")) throw new IOException(GUI.t.t("User abort"));								
 						txt_tx.setText(p2);
 					}
 					catch(Exception ex) 
@@ -217,7 +229,7 @@ public class GUI_PublishTx extends JDialog
 			}
 			catch(Exception ex) 
 			{	
-				txt_meld.setText("Tx Error: No correct transaction!\n"+ex.getMessage());
+				txt_meld.setText(GUI.t.t("Tx Error: No correct transaction!\n")+ex.getMessage());
 				ex.printStackTrace();
 			}
 		}
@@ -241,22 +253,29 @@ public class GUI_PublishTx extends JDialog
 				core.setTimeOut(Integer.valueOf(GUI_CoreSettings.txt_timeOut.getText()));
 				JSONObject jo = core.testmempoolaccept(txt_tx.getText());
 				System.out.println(jo.toString(1));
-				if( (jo.optJSONObject("error"))!=null )	throw new Exception(jo.getJSONObject("error").toString(1));								// Wenn der Core die Tx nicht parsen kann
-				else																															// Wenn der Core die Tx richtig geparst hat
+				if( (jo.optJSONObject("error"))!=null )	throw new Exception(jo.getJSONObject("error").toString(1));										// Wenn der Core die Tx nicht parsen kann
+				else																																	// Wenn der Core die Tx richtig geparst hat
 				{
 					JSONArray ja = jo.getJSONArray("result");
-					if(ja.getJSONObject(0).getBoolean("allowed")==false) throw new Exception(ja.getJSONObject(0).toString(1));					// Wenn der Core die Tx nicht akzeptiert. (Verstoß gegetn Konsensregln etc.)
-					if(JOptionPane.showConfirmDialog(txt_tx, "With OK, the transaction will be send irreversibly!","Send Transaction", 2,2)==0)
+					if(ja.getJSONObject(0).getBoolean("allowed")==false) throw new Exception(ja.getJSONObject(0).toString(1));							// Wenn der Core die Tx nicht akzeptiert. (Verstoß gegetn Konsensregln etc.)
+					if(JOptionPane.showConfirmDialog(txt_tx, GUI.t.t("With OK, the transaction will be send irreversibly!"),"Send Transaction", 2,2)==0)
 					{
 						jo = core.sendrawtransaction(txt_tx.getText());
-						if( (jo.optJSONObject("error"))!=null )	throw new Exception(jo.getJSONObject("error").toString(1));						// Wenn der Core beim Senden einen Fehler zurückgibt.
-						else JOptionPane.showMessageDialog(txt_tx, "Success! Transaction has been send!\n"+jo.toString(1),"Success",1); 		// Wenn Tx erfolgreich gesendet wurde.
+						if( (jo.optJSONObject("error"))!=null )	throw new Exception(jo.getJSONObject("error").toString(1));								// Wenn der Core beim Senden einen Fehler zurückgibt.
+						else 
+						{
+							Audio.play("bitcoinTx");						
+							JTextArea txt = new JTextArea(GUI.t.t("Success! Transaction has been send!\n")+jo.toString(1));
+							txt.setEditable(false);
+							txt.setBackground(GUI.color1);
+							JOptionPane.showMessageDialog(txt_tx, txt,"Success",1); 																	// Wenn Tx erfolgreich gesendet wurde.	
+						}			
 					}	
 				}
 			} 
 			catch (Exception e1) 
 			{
-				txt_meld.setText("Tx Error: No correct transaction!\n"+e1.getMessage());
+				txt_meld.setText(GUI.t.t("Tx Error: No correct transaction!\n")+e1.getMessage());
 			}
 		}
 	});

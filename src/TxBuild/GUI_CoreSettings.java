@@ -1,7 +1,16 @@
 package TxBuild;
-import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -14,19 +23,13 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import org.json.JSONObject;
 import RPC.ConnectRPC;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import java.awt.Insets;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.awt.event.ActionEvent;
+import lib3001.java.Animated;
+import lib3001.java.Hover;
 
 
 
 /********************************************************************************************************************
-*	V1.2							 Autor: Mr. Maxwell   							vom 09.11.2025					*
+*	V1.3							 Autor: Mr. Maxwell   							vom 26.12.2025					*
 *	Die GUI (JDialog) der BitcoinCore RPC Connections-Settings für den TxBuilder									*
 ********************************************************************************************************************/
 
@@ -40,47 +43,60 @@ import java.awt.event.ActionEvent;
 * Der Core erstellt bei jedem Start eine neue .cookie Datei. Der Inhalt wird zufallsgeneriert und immer neu erstellt.
 * Es Wird die datei ".cookie" geladen. In der Datei befindet sich dann der Benutzername und das Passwort			*
 * Benutzername ist immer: 	__cookie__																				*
-* Passwort sieht das so aus, Beispiel:	5b4f84f7e7858b67c9d7533fb19e2a6427c771d8da0ac3796607eb52c90d4e7e		*
+* Passwort sieht so aus, Beispiel:	5b4f84f7e7858b67c9d7533fb19e2a6427c771d8da0ac3796607eb52c90d4e7e				*
 **********************************************************************************************************************/
 
 
 public class GUI_CoreSettings extends JDialog 
 {
 
-	public static JTextField txt_ip 	= new JTextField();
-	public static JTextField txt_port 	= new JTextField("18332");
+	public static JTextField txt_ip 	= new JTextField("127.0.0.1");
+	public static JTextField txt_port 	= new JTextField("8332");
 	public static JTextField txt_uName	= new JTextField();
 	public static JTextField txt_pw 	= new JTextField();
 	public static JTextField txt_timeOut= new JTextField("3");
-	public static JCheckBox  btn_auth	= new JCheckBox("Authentication Method: Cookie "); 
-	public static JButton 	 btn_path	= new JButton("Bitcoin Core Path:");
+	public static JCheckBox  btn_auth	= new JCheckBox("Authentication Method: Cookie",true); // Default-Werte, werden von Config nach dem Laden überschrieben.
+	public static JButton 	 btn_path	= new JButton();
 	public static JLabel	 lbl_path	= new JLabel("user.dir");
 	public static JTextArea  txt_meld 	= new JTextArea();
+	public static boolean	 connected	= false; 			// Bei Erfolgreicher Verbindung wird hier true gesetzt.
 
 	
 	public GUI_CoreSettings(int x, int y) 
 	{
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setTitle("BitcoinCore connection settings");
-		setBounds(x, y, 720, 400);
+		setTitle(GUI.t.t("BitcoinCore connection settings"));
+		setBounds(x, y, 720, 450);
+		setMinimumSize(new Dimension(700, 400));;	
+		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
+		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
 		setModal(true);
-		JPanel  contentPane	= new JPanel(new BorderLayout());
+		JPanel  contentPane	= new JPanel();
 		JPanel 	pnl_haupt 	= new JPanel(null);
 		JScrollPane sp		= new JScrollPane();
-		JButton btn_cTest 	= new JButton("Check connection");
-		JTextArea lbl_info  = new JTextArea("This program must be connected to a Bitcoin-Core.\nEnter the RPC connection data for the Bitcoin-Core here.");
+		JButton btn_cTest 	= new JButton(GUI.t.t("Check connection"));
+		JTextArea lbl_info  = new JTextArea(GUI.t.t("This program must be connected to a Bitcoin-Core.\nYou can find the connection data in the Bitcoin-Core directory, in the bitcoin.conf file."));
 		
-		lbl_info	.setBounds(10, 11, 699, 38);
-		txt_ip		.setBounds(10, 105, 300, 40);
-		txt_port	.setBounds(320,105, 100, 40);
-		txt_uName	.setBounds(10, 155,410, 40);
-		txt_pw		.setBounds(10, 205,410, 40);
-		txt_timeOut	.setBounds(550, 105, 150, 40);
-		btn_cTest	.setBounds(550, 200, 144, 23);
-		btn_path	.setBounds(240, 65, 120, 20);
-		lbl_path	.setBounds(365, 65, 345, 20);
-		btn_auth	.setBounds(12, 65, 225, 24);
-		txt_meld	.setBounds(10, 227, 686, 209);
+		btn_auth	.setToolTipText(GUI.t.t("ToolTipText_btn_auth"));
+		btn_path	.setToolTipText(GUI.t.t("ToolTipText_lbl_path"));	
+		txt_timeOut	.setToolTipText(GUI.t.t("ToolTipText_txt_timeOut"));
+		txt_ip		.setToolTipText(GUI.t.t("ToolTipText_txt_ip"));
+		txt_port	.setToolTipText(GUI.t.t("ToolTipText_txt_port"));
+		txt_uName	.setToolTipText(GUI.t.t("ToolTipText_txt_uName"));
+		txt_pw		.setToolTipText(GUI.t.t("ToolTipText_txt_pw"));
+		btn_cTest	.setToolTipText(GUI.t.t("ToolTipText_txt_btn_cTest"));
+
+		lbl_info	.setBounds(10, 11, 699, 65);
+		txt_ip		.setBounds(10, 125, 300, 40);
+		txt_port	.setBounds(320,125, 100, 40);
+		txt_uName	.setBounds(10, 175,410, 40);
+		txt_pw		.setBounds(10, 225,410, 40);
+		txt_timeOut	.setBounds(550, 125, 150, 40);
+		btn_cTest	.setBounds(550, 220, 144, 23);
+		btn_path	.setBounds(240, 85, 180, 20);
+		lbl_path	.setBounds(425, 85, 345, 20);
+		btn_auth	.setBounds(12, 85, 225, 24);
+		txt_meld	.setBounds(10, 10, 686, 209);	
 		
 		txt_ip		.setBorder(new TitledBorder(new LineBorder(GUI.color4), 	"IP-Address",	TitledBorder.LEADING, 	TitledBorder.TOP, 		GUI.font2, GUI.color3));
 		txt_port	.setBorder(new TitledBorder(new LineBorder(GUI.color4), 	"Port",			TitledBorder.LEADING, 	TitledBorder.TOP, 		GUI.font2, GUI.color3));
@@ -89,12 +105,18 @@ public class GUI_CoreSettings extends JDialog
 		txt_timeOut .setBorder(new TitledBorder(new LineBorder(GUI.color4), 	"TimeOut (sec)",TitledBorder.LEADING, 	TitledBorder.TOP, 		GUI.font2, GUI.color3));
 		txt_meld	.setBorder(new EmptyBorder(8, 8, 8, 8));
 
+		lbl_info	.setFont(GUI.font3);
+		txt_ip		.setFont(GUI.font4);
+		txt_port	.setFont(GUI.font4);
+		txt_uName	.setFont(GUI.font4);
+		txt_pw		.setFont(GUI.font4);
+		txt_timeOut	.setFont(GUI.font4);
+
 		btn_auth	.setFont(new Font("Century Gothic", Font.PLAIN, 11));
 		btn_path	.setFont(new Font("Century Gothic", Font.PLAIN, 11));
 		btn_cTest	.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		lbl_path	.setFont(new Font("Century Gothic", Font.PLAIN, 9));
 
-		
 		lbl_info	.setBackground(GUI.color1);
 		txt_ip 		.setBackground(Color.white);
 		txt_port 	.setBackground(Color.white);	
@@ -102,20 +124,29 @@ public class GUI_CoreSettings extends JDialog
 		txt_pw 		.setBackground(Color.white);
 		txt_timeOut	.setBackground(Color.white);
 		txt_meld	.setBackground(GUI.color1);
-		btn_auth	.setBackground(GUI.color1);
-
+		btn_auth	.setBackground(GUI.color1);	
+		
 		lbl_info	.setForeground(GUI.color4);
 		txt_meld	.setForeground(Color.black);
-		lbl_info	.setFont(GUI.font3);	
 		lbl_info	.setEditable(false);
 		txt_meld	.setEditable(false);
 		btn_cTest	.setMargin(new Insets(0, 0, 0, 0));
 		btn_path	.setMargin(new Insets(0, 0, 0, 0));
 		btn_auth	.setMargin(new Insets(0, 0, 0, 0));
 		sp			.setBorder(null);
-		txt_meld	.setRows(5);
+		txt_meld	.setRows(10);
+		pnl_haupt	.setPreferredSize(new Dimension(0, 280));
+		pnl_haupt	.setMaximumSize(new Dimension(32767, 280));
+		pnl_haupt	.setMinimumSize(new Dimension(0, 280));
+		
+		Hover.addBorder(txt_ip);
+		Hover.addBorder(txt_port);
+		Hover.addBorder(txt_uName);
+		Hover.addBorder(txt_pw);
+		Hover.addBorder(txt_timeOut);
 		
 		sp.setViewportView(txt_meld); 
+		contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
 		pnl_haupt.add(txt_ip);		
 		pnl_haupt.add(txt_port);
 		pnl_haupt.add(txt_uName);		
@@ -126,9 +157,9 @@ public class GUI_CoreSettings extends JDialog
 		pnl_haupt.add(btn_path);
 		pnl_haupt.add(lbl_path);
 		pnl_haupt.add(btn_auth);
-		contentPane.add(pnl_haupt,BorderLayout.CENTER);
-		contentPane.add(sp,BorderLayout.SOUTH);
-		getContentPane().add(contentPane);
+		contentPane.add(pnl_haupt);
+		contentPane.add(sp);
+		add(contentPane);
 
 			
 		
@@ -142,7 +173,6 @@ public class GUI_CoreSettings extends JDialog
 				changesAuthenticationMethod();	
 				if(btn_auth.isSelected()==false)
 				{
-					txt_ip.setText("");
 					txt_uName.setText("");
 					txt_pw.setText("");
 				}
@@ -180,48 +210,125 @@ public class GUI_CoreSettings extends JDialog
 		{
 			public void actionPerformed(ActionEvent e) 
 			{
-				try 
-				{
-					txt_meld.setText("");
-					txt_meld.setForeground(Color.red);
-					String 	ip 	 = txt_ip.getText();
-					int 	port = Integer.valueOf(txt_port.getText());
-					String 	name = txt_uName.getText();
-					String 	pw 	 = txt_pw.getText();
-					ConnectRPC peer = new ConnectRPC(ip, port, name, pw);
-					peer.setTimeOut(Integer.parseInt(txt_timeOut.getText()));
-					String str = peer.get("getblockchaininfo", null);
-					try 
-					{
-						JSONObject jo = new JSONObject(str);
-						txt_meld.setForeground(new Color(0,180,0));
-						txt_meld.setText("Connected!\n"+jo.toString(1));
-					} 
-					catch (Exception e1) 
-					{
-						txt_meld.setForeground(Color.red);
-						txt_meld.setText("Connected, but password or username are wrong!\n"+str);
-					}	
-					txt_meld.grabFocus();
-					txt_meld.setCaretPosition(0);
-				} 
-				catch (Exception e1) {txt_meld.setForeground(Color.red);  txt_meld.setText("No connect!\n"+e1.getMessage());} 
+				checkCoreConnection();
 			}
 		});	
 
 	}	
 
 	
+// ------------------------------------------------------------------------- Ende GUI ------------------------------------------------------------------------------------
 	
 	
 	
-	// Wird ausgeführt wenn die Authentications-Methode geändert wird.
-	// Also bei Betätigung des Buttens "Authentication Method: Cookie" (btn_auth), oder bei jedem Start des Programmes.
-	// Achtung, dadurch wird die Datei: ".cookie" im Bitcoin-Core Verzeichness geöffnet und ausgelesen. Diese Datei ist nur vorhanden, wenn der Core läuft!
-	// Wenn die Datei vorhanden ist, Werden Benutzername und Passwort aus dieser Datei verwendet.
-	// Benutzername ist:"__cookie__" und Passwort, das hinter dem ":"
-	// Wenn der Butten deaktiviert wird, werden wieder Passwort und Username zur Eingabe verwendet.
-	// In der GUI "BitcoinCore connection settings" wird entsprechend der Einstellung dieses Buttens verändert.
+/**	Wird bei jedem Programmstart ausgeführt.
+	Prüft die BitcoinCore RPC-Verbindung und stellt je nach Einstellung des BitcoinCores das Programm auf TestNet oder MainNet ein. **/
+	public static void checkCoreConnection()
+	{
+		try 																				// Verbindungsteil
+		{		
+			txt_meld.setText("");
+			txt_meld.setForeground(Color.red);
+			String 	ip 	 = txt_ip.getText();
+			int 	port = Integer.valueOf(txt_port.getText());
+			String 	name = txt_uName.getText();
+			String 	pw 	 = txt_pw.getText();
+			ConnectRPC peer = new ConnectRPC(ip, port, name, pw);
+			peer.setTimeOut(Integer.parseInt(txt_timeOut.getText()));
+			String str = peer.get("getblockchaininfo", null);
+			try 
+			{
+				JSONObject jo = new JSONObject(str);
+				txt_meld.setForeground(new Color(0,180,0));
+				txt_meld.setText("Connected!\n"+jo.toString(1));
+				connected=true;	
+				String chain = jo.getJSONObject("result").getString("chain");
+				if(chain.equals("main")) GUI.btn_testNet.setSelected(false);
+				if(chain.equals("test")) GUI.btn_testNet.setSelected(true);
+				GUI.initNetwork();
+				System.out.println("Connected BitcoinCore with: "+chain);
+				GUI.txt_meld.setForeground(new Color(0,180,0));
+				GUI.txt_meld.setText("Connected BitcoinCore with: "+chain);
+			} 
+			catch (Exception e1) 
+			{
+				connected=false;	
+				txt_meld.setForeground(Color.red);
+				txt_meld.setText(GUI.t.t("Connected, but password or username are wrong!\n")+str);
+				GUI.txt_meld.setForeground(Color.red);
+				GUI.txt_meld.setText(GUI.t.t("Connected, but password or username are wrong!\n")+str);
+			}	
+			txt_meld.grabFocus();
+			txt_meld.setCaretPosition(0);
+		} 
+		catch (Exception e1) 
+		{
+			connected=false; 
+			txt_meld.setForeground(Color.red);  
+			txt_meld.setText(GUI.t.t("No connect!\n")+e1.getMessage());
+			GUI.txt_meld.setForeground(Color.red);  
+			GUI.txt_meld.setText(GUI.t.t("No connect!\n")+e1.getMessage());
+		} 	
+			
+		if(GUI.dialogCoreSettings==null) 						// Nur Wenn der Dialog noch nicht geöffnet ist, also beim Neustart.
+		{
+			if(GUI.debugMode == 1)								// DebugMode im Main-Net, Wenn DebugMode aktiv, wird hier sofort abgebrochen.
+			{
+				GUI.btn_testNet.setSelected(false);
+				GUI.initNetwork();
+				GUI.txt_meld.setForeground(new Color(240,0,0));
+				GUI.txt_meld.setText("Debug mode with MainNet");
+				return;
+			}
+			if(GUI.debugMode == 2)								// DebugMode im Test-Net, Wenn DebugMode aktiv, wird hier sofort abgebrochen.
+			{
+				GUI.btn_testNet.setSelected(true);
+				GUI.initNetwork();
+				GUI.txt_meld.setForeground(new Color(240,0,0));
+				GUI.txt_meld.setText("Debug mode with TestNet3");
+				return;
+			}
+			
+			GUI.dialogCoreSettings = new GUI_CoreSettings(GUI.frame.getX()+340,GUI.frame.getY()+55);
+			GUI.dialogCoreSettings.addWindowListener(new java.awt.event.WindowAdapter() 						// Close Button wird abgefangen und hier selbst verarbeitet.
+			{
+			    public void windowClosing(java.awt.event.WindowEvent windowEvent) 
+			    {
+			    	if(connected) {}
+			    	else 
+			    	{
+			    		Config.save();
+				    	Animated.close();
+						try {Thread.sleep(200);} catch (InterruptedException e) {e.printStackTrace();}	
+				    	System.exit(0);	
+			    	}
+			    }
+			});	
+			if(connected) 	GUI.dialogCoreSettings.setVisible(false);											// Nur wenn die Verbindung schon vorher richtig configuriert war, wird der Dialog sofort geschlossen.														
+			else 			GUI.dialogCoreSettings.setVisible(true);				
+			GUI.dialogCoreSettings.pack();		
+		}		
+		if(connected) 	GUI.dialogCoreSettings.setVisible(false);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+/**	Wird ausgeführt wenn die Authentications-Methode geändert wird.
+	Also bei Betätigung des Buttens "Authentication Method: Cookie" (btn_auth), oder bei jedem Start des Programmes.
+	Achtung, dadurch wird die Datei: ".cookie" im Bitcoin-Core Verzeichness geöffnet und ausgelesen. Diese Datei ist nur vorhanden, wenn der Core läuft!
+	Wenn die Datei vorhanden ist, Werden Benutzername und Passwort aus dieser Datei verwendet.
+	Benutzername ist:"__cookie__" und Passwort, das hinter dem ":"
+	Wenn der Butten deaktiviert wird, werden wieder Passwort und Username zur Eingabe verwendet.
+	In der GUI "BitcoinCore connection settings" wird entsprechend der Einstellung dieses Buttens verändert. **/
 	public static void changesAuthenticationMethod()
 	{
 		if(btn_auth.isSelected())
@@ -245,20 +352,21 @@ public class GUI_CoreSettings extends JDialog
 					txt_pw.setText(str.substring(11));	
 					
 					txt_meld.setForeground(Color.black);
-					txt_meld.setText    ("Authentication method: cookie");
+					txt_meld.setText    (GUI.t.t("Authentication Method: Cookie"));
 					
 					
 				}
 				catch (Exception e) 
 				{
 					e.printStackTrace();
+					GUI.txt_meld.setForeground(Color.red);
 					GUI.txt_meld.setText(e.getMessage());
 				}
 			}
 			else
 			{			
 				txt_meld.setForeground(Color.red);
-				txt_meld.setText    ("Bitcoin-Core is not running, or the file path to the Bitcoin directory is not correct!\nSpecify the file path where the configuration file (bitcoin.conf) is stored.");
+				txt_meld.setText    (GUI.t.t("Bitcoin-Core is not running, or the file path to the Bitcoin directory is not correct!\nSpecify the file path where the configuration file (bitcoin.conf) is stored."));
 				System.out.println("File: "+f.toString()+" not exist!");
 			}			
 		}
@@ -268,10 +376,9 @@ public class GUI_CoreSettings extends JDialog
 			txt_uName.setEnabled(true);
 			txt_pw.setEnabled(true);
 			btn_path.setVisible(false);
-			lbl_path.setVisible(false);
-			
+			lbl_path.setVisible(false);		
 			txt_meld.setForeground(Color.black);
-			txt_meld.setText    ("Authentication method: Sign-in\nYou have to enter the RPC credentials from the bitcoin.conf file of the Bitcoin core here.");
+			txt_meld.setText    (GUI.t.t("Authentication method: Sign-in\nYou have to enter the RPC credentials from the bitcoin.conf file of the Bitcoin core here."));
 		}
 	}
 }

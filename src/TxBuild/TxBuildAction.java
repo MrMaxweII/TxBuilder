@@ -14,18 +14,20 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import BTClib3001.ByteArrayList;
-import BTClib3001.Calc;
-import BTClib3001.Convert;
-import BTClib3001.PkScript;
-import BTClib3001.Transaktion;
-import BTClib3001.TxPrinter;
 import RPC.ConnectRPC;
+import lib3001.btc.PkScript;
+import lib3001.btc.Transaktion;
+import lib3001.btc.TxPrinter;
+import lib3001.crypt.Calc;
+import lib3001.crypt.Convert;
+import lib3001.java.Animated;
+import lib3001.java.ByteArrayList;
+import lib3001.qrCode.QRCodeZXING;
 
 
 
 /********************************************************************************************************************
-*				   					 Autor: Mr. Maxwell   							vom 25.10.2023					*
+*				   					 Autor: Mr. Maxwell   							vom 02.12.2025					*
 *	ActionListener für den TxBuild																					*
 *	Hier wird die Funktion des TxBuild implemenetier und die GUI gesteuert											*
 *********************************************************************************************************************/
@@ -77,6 +79,7 @@ public static void verifyOutputsAndCalcFeeRate()
 		{
 			enalbleTxButtons(false); 
 			GUI.txt_feeRate.setText("");
+			GUI.txt_meld.setForeground(Color.red);
 			GUI.txt_meld.setText(e.getMessage());
 		}
 	}
@@ -130,6 +133,21 @@ public static void enalbleTxButtons(boolean enable)
 	GUI.lbl_viewTxHex	.setEnabled(enable);
 	GUI.lbl_qrCode		.setEnabled(enable);
 	GUI.lbl_save		.setEnabled(enable);
+	if(enable) 
+	{
+		Animated.start(GUI.lbl_viewTx,true);
+		Animated.start(GUI.lbl_viewTxHex,true);
+		Animated.start(GUI.lbl_qrCode,true);
+		Animated.start(GUI.lbl_save,true);
+	}
+	else
+	{
+		Animated.stop(GUI.lbl_viewTx);
+		Animated.stop(GUI.lbl_viewTxHex);
+		Animated.stop(GUI.lbl_qrCode);
+		Animated.stop(GUI.lbl_save);
+	}
+	
 }
 
 
@@ -143,14 +161,14 @@ public static void actions()
 		public void mouseReleased(MouseEvent e) 
 		{				
 			if (e.getButton() == MouseEvent.BUTTON1)
-			 {
+			 {			
 					ip 	 = GUI_CoreSettings.txt_ip.getText();
 					port = Integer.valueOf(GUI_CoreSettings.txt_port.getText());
 					name = GUI_CoreSettings.txt_uName.getText();
-					pw 	 = GUI_CoreSettings.txt_pw.getText();
-					
+					pw 	 = GUI_CoreSettings.txt_pw.getText();					
 					GUI.txt_totalValIn.setText("");
 				 	GUI.btn_loadTx.setVisible(false);
+					Animated.stop(GUI.btn_loadTx);
 					GUI.btn_cancel.setVisible(true);
 					GUI.cBox_inCount.setEnabled(false);
 					GUI.menu_Setting.setEnabled(false);
@@ -167,7 +185,7 @@ public static void actions()
 					{
 						@Override
 						public void run() 
-						{				
+						{								
 							ConnectRPC core = new ConnectRPC(ip,port,name,pw);
 							core.setTimeOut(Integer.valueOf(GUI_CoreSettings.txt_timeOut.getText()));
 							try 
@@ -185,6 +203,7 @@ public static void actions()
 							catch(Exception ex)
 							{
 								ex.printStackTrace();
+								GUI.txt_meld.setForeground(Color.red);
 								GUI.txt_meld.setText(ex.getMessage());
 							}
 							
@@ -243,9 +262,10 @@ public static void actions()
 	GUI.btn_cancel.addMouseListener(new MouseAdapter()  
 	{
 		public void mouseReleased(MouseEvent e)
-		{
+		{		
 			if (e.getButton() == MouseEvent.BUTTON1)
 			{
+				Animated.start(GUI.btn_loadTx,true);
 				// Steuert die Process-Bar
 				Thread thread3 = new Thread(new Runnable() 
 				{
@@ -262,6 +282,7 @@ public static void actions()
 						catch(Exception ex)
 						{
 							ex.printStackTrace();
+							GUI.txt_meld.setForeground(Color.red);
 							GUI.txt_meld.setText(ex.getMessage());
 						}
 					}
@@ -288,12 +309,13 @@ public static void actions()
 						byte[] magic;
 						if(GUI.btn_testNet.isSelected()) magic = TESTNET3;
 						else							 magic = MAINNET;
-						TxPrinter txP = new TxPrinter(magic, tx, GUI.frame.getX(), GUI.frame.getY());
+						TxPrinter txP = new TxPrinter(magic, tx, GUI.frame.getX()+15, GUI.frame.getY()+30);
 						txP.setModal(true);
 						txP.setVisible(true);
 					} 
 					catch (Exception e1) 
 					{
+						GUI.txt_meld.setForeground(Color.red);
 						GUI.txt_meld.setText(e1.getMessage());
 						e1.printStackTrace();
 					}
@@ -326,6 +348,7 @@ public static void actions()
 					} 
 					catch (Exception e1) 
 					{
+						GUI.txt_meld.setForeground(Color.red);
 						GUI.txt_meld.setText(e1.getMessage());
 						e1.printStackTrace();
 					}
@@ -343,16 +366,17 @@ public static void actions()
 			 if (e.getButton() == MouseEvent.BUTTON1 && GUI.lbl_qrCode.isEnabled())
 			 {
 				if(GUI.txVerify()==true)
-					try 
-					{	
-						String tx = Convert.byteArrayToHexString(createTx());
-						QRCodeZXING.printQR(tx, "Unsig Transaction", GUI.color1, Color.black, GUI.frame.getX()+200, GUI.frame.getY()+5);
-					} 
-					catch (Exception e1) 
-					{
-						GUI.txt_meld.setText(e1.getMessage());
-						e1.printStackTrace();
-					}
+				try 
+				{	
+					String tx = Convert.byteArrayToHexString(createTx());
+					QRCodeZXING.printQR_on_JDialog(tx, "Unsig Transaction", GUI.color1, Color.black, GUI.frame.getX()+250, GUI.frame.getY()+5);
+				} 
+				catch (Exception e1) 
+				{
+					GUI.txt_meld.setForeground(Color.red);
+					GUI.txt_meld.setText(e1.getMessage());
+					e1.printStackTrace();
+				}
              }
 		}
 	});
@@ -387,6 +411,7 @@ public static void actions()
 					} 
 					catch (Exception e1) 
 					{
+						GUI.txt_meld.setForeground(Color.red);
 						GUI.txt_meld.setText(e1.getMessage());
 						e1.printStackTrace();
 					}
@@ -409,7 +434,7 @@ public static void actions()
 	//	Wertet das Ergebnis vom Core (get_scantxoutset) aus und und schreibt die Daten in die GUI
 	private static void scantxoutsetResult(JSONObject jo) throws JSONException
 	{	
-		try{GUI.txt_meld.setText("BitcoinCore Error:\n"+ jo.getJSONObject("error").getString("message"));}   // Gibt Fehler-Meldungen vom Core aus
+		try{GUI.txt_meld.setForeground(Color.red); GUI.txt_meld.setText("BitcoinCore Error:\n"+ jo.getJSONObject("error").getString("message"));}   // Gibt Fehler-Meldungen vom Core aus
 		catch(Exception e) {};
 		try
 		{
@@ -488,7 +513,7 @@ public static void actions()
 		String str = insertPkScript(jo.getString("result"),pkScript);											// PkScript der vorherigen Tx wird im Sig-Feld eingefügt		
 		byte[] out = Convert.hexStringToByteArray(str);
 		if(toWitness==true) out = legancyToWitness(out, preValue);												// Witness-Struktur wird eingefügt, wenn die Tx als Witness-Tx signiert werden muss
-		GUI.txt_txVSize.setText(String.valueOf(String.format("%.2f",  calcVirtualSize(out))));					// Berechnet/Schätzt die Virtual-Sitze (vByte)
+		GUI.txt_txVSize.setText(String.valueOf(String.format("%.2f",  calcVirtualSize(out,GUI_FeeSettings.estimateProfile))));	// Berechnet/Schätzt die Virtual-Sitze (vByte)
 		return out;
 	}	
 	
@@ -542,28 +567,36 @@ public static void actions()
 	// Dies ist nur eine Schätzung, da die tatsächliche Größe der späteren signierten Tx leicht variieren kann. (Die Signaturen variieren in der Regel um ein Byte/Tx-Input)
 	// Achtung! Tx-Inputs aus Uncompressed-PubKey´s können nicht erkannt werden! Alle Berechnungen werden für Compressed angenommen! Folge: Alle Uncompressed-Inputs werden um 32Byte zu kurz berechnet/geschätzt!
 	// Es wird die fertige unsignierte Tx so übergeben, wie sie auch im Programm ausgegeben wird. Byte-Array
-	// Die Transaktion wird erneut geparst und die Berechnungen zur größen-Schätztung hier ausgefürhrt.
-	private static double calcVirtualSize(byte[] uTxRaw)
+	// Der Parameter "estimateProfil" bewirkt 3 verschiedene Schätzprofile, die in der Config eingestellt werden können:
+	// estimateProfile=1: Die geschätzte VirtualSize ist der niedrigste Mögliche Wert. Alle Signaturen werden in kürzester Form angenommen, ohne das zusätzliche Byte.
+	// estimateProfile=2: Die geschätzte VirtualSize ist ein mittlerer Durchschnitt.   Für alle Signaturen wird ein zusätzliches halbes Byte angenommen.
+	// estimateProfile=3: Die geschätzte VirtualSize ist der höchste Mögliche Wert.    Alle Signaturen werden in längster Form angenommen, mit dem zusätzlichen Byte.
+	private static double calcVirtualSize(byte[] uTxRaw, int estimateProfile)
 	{		
-//		System.out.println("calcVirtualSize()             ausgelöst.");	
+		double zSigByte = 0.0;													// Das zuätzliche Signatur-Byte, was beim Signieren für jeden Input mit einer wahrscheinlichkeit von 50% zusätzlich anfällt.
+		if(estimateProfile ==1) zSigByte = 0.0;									// Minimaler 		  Schätzwert
+		if(estimateProfile ==2) zSigByte = 0.5;									// Durchschnittlicher Schätzwert
+		if(estimateProfile ==3) zSigByte = 1.0;									// Maximaler 		  Schätzwert
+		
+		
 		double addSize = 0;
 		Transaktion tx = new Transaktion(uTxRaw,0);	
-		if(tx.isWitness)  											// bei Witness-Tx
+		if(tx.isWitness)  														// bei Witness-Tx
 		{
 			
-			byte[][] pk = tx.getSigScript(); 						// Das prevPK Spript wird aus dem Datenfeld des SigScript geparst	
+			byte[][] pk = tx.getSigScript(); 									// Das prevPK Spript wird aus dem Datenfeld des SigScript geparst	
 			for(int i=0; i<tx.getTxInCount();i++)
 			{
 				int pkLen = pk[i].length;
-				if(pkLen==25)	addSize = addSize + 71.25;			// bei eingebetteter Legancy P2PKH
-				if(pkLen==23)	addSize = addSize + 97.0 -80.25;	// bei P2SH
-				if(pkLen==22)	addSize = addSize + 75.0 -80.25;	// bei P2WPKH			
+				if(pkLen==25)	addSize = addSize + 71.25 + zSigByte;			// bei eingebetteter Legancy P2PKH
+				if(pkLen==23)	addSize = addSize + 97.0 - 80.25 + zSigByte;	// bei P2SH
+				if(pkLen==22)	addSize = addSize + 75.0 - 80.25 + zSigByte;	// bei P2WPKH			
 			}
 			return uTxRaw.length + addSize - 1.5;
 		}
-		else													// bei Legancy Tx: Für alle Inputs +81 Bytes! (Uncompressed Tx können nicht erkannt werden !!!)
+		else																	// bei Legancy Tx: Für alle Inputs +81 Bytes! (Uncompressed Tx können nicht erkannt werden !!!)
 		{
-			addSize = tx.getTxInCount() * 81;
+			addSize = tx.getTxInCount() * (81.0+zSigByte);
 			return uTxRaw.length + addSize;
 		}
 	}

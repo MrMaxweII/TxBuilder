@@ -10,7 +10,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -21,11 +20,19 @@ import javax.swing.Timer;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import TxBuild.GUI;
+import TxBuild.MyIcons;
+import lib3001.java.Hover;
 
 
 
 /****************************************************************************************************************************************************
-*	Version 1.0  									 				  	Autor: Mr. Maxwell   										vom 24.02.2024	*
+*	Version 1.2  									 				  	Autor: Mr. Maxwell   										vom 31.12.2025	*
+*																																					*
+*	Letzte Änderung: 																																*
+*	Hover für Buttens hinzugefügt		Kann für Bibliothek wieder entfnert werden.																	*
+*	Anpassung: GUI.t.t(...) 			Kann für Bibliothek wieder entfnert werden.																	*
+*																																					*
 *	Ertellt ein Liniendiagramm in ein JPanel																										*
 *	Klasse arbeitet unabhängit und kann in Bibliotheken verwendet werden. 																			*
 *	Abhängigkeit nur: Draw Klasse für dieses Linien-Diagramm, keine externen Bibliotheken erforderlich												*
@@ -48,62 +55,62 @@ import javax.swing.event.ChangeListener;
 
 public class LineDiagram 
 {
-	private JPanel		  pnl_main;								// Das übergebene Haupt Panel
-	private JLabel 		  lbl_chart	= new JLabel();				// Das Label mit dem LinienDiagramm, ohne die Beschriftungsleisten					
-	private JLabel 		  lbl_X 	= new JLabel("X-Axis");		// Achsen Beschreibung X
-	private JLabel		  lbl_Y 	= new JLabel("Y-Axis");		// Achsen Beschreibung Y
-	public  JLabel  	  lbl_load 	= new JLabel(new ImageIcon("icons/load.gif"));	// Animiertes progress gif. drehendes Bitcoin-Symbol
-	private JToggleButton btn_2h 	= new JToggleButton("2h");	// Butten skalliert Zeitachse auf 2h = 12 Blöcke
-	private JToggleButton btn_24h	= new JToggleButton("24h");	// Butten skalliert Zeitachse auf 24h = 150 Blöcke
-	private JToggleButton btn_week  = new JToggleButton("1 week");// Butten skalliert Zeitachse auf 1 Woche = 1000 Blöcke
-	private JToggleButton btn_4week = new JToggleButton("4 week");// Butten skalliert Zeitachse auf 4 Wochen= 4000 Blöcke
+	private JPanel		  pnl_main;									// Das übergebene Haupt Panel
+	private JLabel 		  lbl_chart	= new JLabel();					// Das Label mit dem LinienDiagramm, ohne die Beschriftungsleisten					
+	private JLabel 		  lbl_X 	= new JLabel("X-Axis");			// Achsen Beschreibung X
+	private JLabel		  lbl_Y 	= new JLabel("Y-Axis");			// Achsen Beschreibung Y
+	public  JLabel  	  lbl_load 	= new JLabel(MyIcons.load_gif);	// Animiertes progress gif. drehendes Bitcoin-Symbol
+	private JToggleButton btn_2h 	= new JToggleButton("2h");		// Butten skalliert Zeitachse auf 2h = 12 Blöcke
+	private JToggleButton btn_24h	= new JToggleButton("24h");		// Butten skalliert Zeitachse auf 24h = 150 Blöcke
+	private JToggleButton btn_week  = new JToggleButton(GUI.t.t("1 week"));// Butten skalliert Zeitachse auf 1 Woche = 1000 Blöcke, Für Translate modifiziert.
+	private JToggleButton btn_4week = new JToggleButton(GUI.t.t("4 week"));// Butten skalliert Zeitachse auf 4 Wochen= 4000 Blöcke, Für Translate modifiziert.
 
-	private JSpinner 	  spinnerY	= new JSpinner();			// Skalierungs Spinner der Y-Achse
-	private Draw   		  drawChart;							// Linien-Diagramm ohne Beschriftungsleisten
-	private	Draw   		  draw_xU;								// BeschriftungsLabel X-Achse
-	private	Draw   		  draw_yL; 								// BeschriftungsLabel Y-Achse links
-	private	Draw   		  draw_yR; 								// BeschriftungsLabel Y-Achse rechts
-	private Color		  color0 = Color.white;					// Hintergrundfarbe innerhalb des Diagramms	
-	private Color		  color1 = Color.black;					// Schriftfarbe der Achsenbeschriftung	
-	private Color		  color2 = Color.black;					// LinienFarbe das Randgitters (kurze Teilungs-Striche) 
-	private Color		  color3 = Color.lightGray;				// LinienFarbe das inneren horizontalen Hauptgitters
-	private Color		  color4 = Color.lightGray;				// LinienFarbe das inneren vertikalen   Hauptgitters
-	private Font		  font1  = null;						// Schriftart der Achsen-Beschriftung (Zahlen/Zeichen)
-	private double  	  sizeX = 889;							// Breite des LinienDiagramms (double zu korrekten Berechnen) Wird dynamisch angepasst
-	private double  	  sizeY = 300;							// Höhe   des LinienDiagramms (double zu korrekten Berechnen) Wird dynamisch angepasst
-	private double		  scalX = 1;							// Skallierungs-Faktor X-Achse, entspricht dem akteullem maximalen X-Wert
-	private double		  scalY = 1;							// Skallierungs-Faktor Y-Achse, entspricht dem aktuellem maximalen Y-Wert
+	private JSpinner 	  spinnerY	= new JSpinner();				// Skalierungs Spinner der Y-Achse
+	private Draw   		  drawChart;								// Linien-Diagramm ohne Beschriftungsleisten
+	private	Draw   		  draw_xU;									// BeschriftungsLabel X-Achse
+	private	Draw   		  draw_yL; 									// BeschriftungsLabel Y-Achse links
+	private	Draw   		  draw_yR; 									// BeschriftungsLabel Y-Achse rechts
+	private Color		  color0 = Color.white;						// Hintergrundfarbe innerhalb des Diagramms	
+	private Color		  color1 = Color.black;						// Schriftfarbe der Achsenbeschriftung	
+	private Color		  color2 = Color.black;						// LinienFarbe das Randgitters (kurze Teilungs-Striche) 
+	private Color		  color3 = Color.lightGray;					// LinienFarbe das inneren horizontalen Hauptgitters
+	private Color		  color4 = Color.lightGray;					// LinienFarbe das inneren vertikalen   Hauptgitters
+	private Font		  font1  = null;							// Schriftart der Achsen-Beschriftung (Zahlen/Zeichen)
+	private double  	  sizeX = 889;								// Breite des LinienDiagramms (double zu korrekten Berechnen) Wird dynamisch angepasst
+	private double  	  sizeY = 300;								// Höhe   des LinienDiagramms (double zu korrekten Berechnen) Wird dynamisch angepasst
+	private double		  scalX = 1;								// Skallierungs-Faktor X-Achse, entspricht dem akteullem maximalen X-Wert
+	private double		  scalY = 1;								// Skallierungs-Faktor Y-Achse, entspricht dem aktuellem maximalen Y-Wert
 	
-	private ArrayList<Double> data1 = new ArrayList<Double>();	//  Daten Reihe1 
-	private ArrayList<Double> data2 = new ArrayList<Double>();	//  Daten Reihe2 
-	private ArrayList<Double> data3 = new ArrayList<Double>();	//  Daten Reihe3 
-	private ArrayList<Double> data4 = new ArrayList<Double>();	//  Daten Reihe4 
-	private ArrayList<Double> data5 = new ArrayList<Double>();	//  Daten Reihe5 
-	private ArrayList<Double> data6 = new ArrayList<Double>();	//  Daten Reihe6 
-	private ArrayList<Double> data7 = new ArrayList<Double>();	//  Daten Reihe7 
-	private ArrayList<Double> data8 = new ArrayList<Double>();	//  Daten Reihe8 
+	private ArrayList<Double> data1 = new ArrayList<Double>();		//  Daten Reihe1 
+	private ArrayList<Double> data2 = new ArrayList<Double>();		//  Daten Reihe2 
+	private ArrayList<Double> data3 = new ArrayList<Double>();		//  Daten Reihe3 
+	private ArrayList<Double> data4 = new ArrayList<Double>();		//  Daten Reihe4 
+	private ArrayList<Double> data5 = new ArrayList<Double>();		//  Daten Reihe5 
+	private ArrayList<Double> data6 = new ArrayList<Double>();		//  Daten Reihe6 
+	private ArrayList<Double> data7 = new ArrayList<Double>();		//  Daten Reihe7 
+	private ArrayList<Double> data8 = new ArrayList<Double>();		//  Daten Reihe8 
 
-	private	Color colorData1;									//  Linienfarbe Reihe 1
-	private	Color colorData2;									//  Linienfarbe Reihe 2
-	private	Color colorData3;									//  Linienfarbe Reihe 3
-	private	Color colorData4;									//  Linienfarbe Reihe 4
-	private	Color colorData5;									//  Linienfarbe Reihe 5
-	private	Color colorData6;									//  Linienfarbe Reihe 6
-	private	Color colorData7;									//  Linienfarbe Reihe 7
-	private	Color colorData8;									//  Linienfarbe Reihe 8
+	private	Color colorData1;										//  Linienfarbe Reihe 1
+	private	Color colorData2;										//  Linienfarbe Reihe 2
+	private	Color colorData3;										//  Linienfarbe Reihe 3
+	private	Color colorData4;										//  Linienfarbe Reihe 4
+	private	Color colorData5;										//  Linienfarbe Reihe 5
+	private	Color colorData6;										//  Linienfarbe Reihe 6
+	private	Color colorData7;										//  Linienfarbe Reihe 7
+	private	Color colorData8;										//  Linienfarbe Reihe 8
 	private Color oldColorDate1;
 	private Color oldColorDate2;
 	private Color oldColorDate3;
 	private Color oldColorDate4;
 
-	private JLabel lineName1 = new JLabel();					// Linen-Bezeichnung der Linie 1
-	private JLabel lineName2 = new JLabel();					// Linen-Bezeichnung der Linie 2
-	private JLabel lineName3 = new JLabel();					// Linen-Bezeichnung der Linie 3
-	private JLabel lineName4 = new JLabel();					// Linen-Bezeichnung der Linie 4
-	private JLabel lineName5 = new JLabel();					// Linen-Bezeichnung der Linie 5
-	private JLabel lineName6 = new JLabel();					// Linen-Bezeichnung der Linie 6
-	private JLabel lineName7 = new JLabel();					// Linen-Bezeichnung der Linie 7
-	private JLabel lineName8 = new JLabel();					// Linen-Bezeichnung der Linie 8
+	private JLabel lineName1 = new JLabel();						// Linen-Bezeichnung der Linie 1
+	private JLabel lineName2 = new JLabel();						// Linen-Bezeichnung der Linie 2
+	private JLabel lineName3 = new JLabel();						// Linen-Bezeichnung der Linie 3
+	private JLabel lineName4 = new JLabel();						// Linen-Bezeichnung der Linie 4
+	private JLabel lineName5 = new JLabel();						// Linen-Bezeichnung der Linie 5
+	private JLabel lineName6 = new JLabel();						// Linen-Bezeichnung der Linie 6
+	private JLabel lineName7 = new JLabel();						// Linen-Bezeichnung der Linie 7
+	private JLabel lineName8 = new JLabel();						// Linen-Bezeichnung der Linie 8
 
 
 	
@@ -120,10 +127,10 @@ public LineDiagram(JPanel pnl)
 	JLabel 	lbl_yL			= new JLabel();									// BeschriftungsLabel Y-Achse links
 	JLabel 	lbl_yR			= new JLabel();									// BeschriftungsLabel Y-Achse rechts
 	ButtonGroup   btnGroup 	= new ButtonGroup();
-			drawChart		= new Draw(lbl_chart,(int)sizeX,(int)sizeY);	// Linien-Diagramm ohne Beschriftungsleisten
-			draw_xU 		= new Draw(lbl_xU,(int)sizeX,20);				// BeschriftungsLabel X-Achse
-			draw_yL 		= new Draw(lbl_yL,30,(int)sizeY);				// BeschriftungsLabel Y-Achse
-			draw_yR 		= new Draw(lbl_yR,30,(int)sizeY);				// BeschriftungsLabel Y-Achse
+	drawChart				= new Draw(lbl_chart,(int)sizeX,(int)sizeY);	// Linien-Diagramm ohne Beschriftungsleisten
+	draw_xU 				= new Draw(lbl_xU,(int)sizeX,20);				// BeschriftungsLabel X-Achse
+	draw_yL 				= new Draw(lbl_yL,30,(int)sizeY);				// BeschriftungsLabel Y-Achse
+	draw_yR 				= new Draw(lbl_yR,30,(int)sizeY);				// BeschriftungsLabel Y-Achse
 
 	lbl_load	.setBounds((int) (sizeX/2)+50,(int) (sizeY/2)+35,100,100);		
 	lbl_chart	.setBounds(100, 100, (int)sizeX, (int)sizeY);
@@ -137,25 +144,57 @@ public LineDiagram(JPanel pnl)
 	btn_week	.setBounds((int)sizeX-100, 45, 95, 23);
 	btn_4week	.setBounds((int)sizeX,     45, 95, 23);
 	spinnerY	.setBounds((int) (sizeX+135), 100, 16, (int)sizeY);	
-	lineName1	.setBounds(200, 10, 300, 20);
-	lineName2	.setBounds(200, 22, 300, 20);
-	lineName3	.setBounds(200, 34, 300, 20);
-	lineName4	.setBounds(200, 46, 300, 20);
-	lineName5	.setBounds(200, 58, 300, 20);
-	lineName6	.setBounds(200, 70, 300, 20);
-	lineName7	.setBounds(200, 82, 300, 20);
-	lineName8	.setBounds(200, 94, 300, 20);
+	lineName1	.setBounds(180, 10, 300, 15);
+	lineName2	.setBounds(180, 25, 300, 15);
+	lineName3	.setBounds(180, 40, 300, 15);
+	lineName4	.setBounds(180, 55, 300, 15);
+	lineName5	.setBounds(180, 70, 300, 15);
+	lineName6	.setBounds(180, 85, 300, 15);
+	lineName7	.setBounds(180, 100, 300,15);
+	lineName8	.setBounds(180, 115, 300,15);
 	
 	lbl_load	.setText("Loading...");
-	lbl_load.setHorizontalTextPosition(JLabel.CENTER);
-	lbl_load.setVerticalTextPosition(JLabel.NORTH);
+	lbl_load	.setHorizontalTextPosition(JLabel.CENTER);
+	lbl_load	.setVerticalTextPosition(JLabel.NORTH);
 
+	btn_2h		.setBorder(new LineBorder(GUI.color4,1));
+	btn_24h		.setBorder(new LineBorder(GUI.color4,1));
+	btn_week	.setBorder(new LineBorder(GUI.color4,1));
+	btn_4week	.setBorder(new LineBorder(GUI.color4,1));
+
+	lineName1	.setToolTipText(GUI.t.t("ToolTipText_lineName"));
+	lineName2	.setToolTipText(GUI.t.t("ToolTipText_lineName"));
+	lineName3	.setToolTipText(GUI.t.t("ToolTipText_lineName"));
+	lineName4	.setToolTipText(GUI.t.t("ToolTipText_lineName"));
+	btn_2h		.setToolTipText(GUI.t.t("ToolTipText_btn_2h"));
+	btn_24h		.setToolTipText(GUI.t.t("ToolTipText_btn_24h"));
+	btn_week	.setToolTipText(GUI.t.t("ToolTipText_btn_week"));
+	btn_4week	.setToolTipText(GUI.t.t("ToolTipText_btn_4week"));
+	spinnerY	.setToolTipText(GUI.t.t("ToolTipText_spinnerY"));
 	
+	btn_2h		.setFont(new Font("DejaVu Sans", Font.PLAIN, 12));
+	btn_24h		.setFont(new Font("DejaVu Sans", Font.PLAIN, 12));
+	btn_week	.setFont(new Font("DejaVu Sans", Font.PLAIN, 12));
+	btn_4week	.setFont(new Font("DejaVu Sans", Font.PLAIN, 12));
+	lineName1	.setFont(new Font("DejaVu Sans", Font.PLAIN, 11));
+	lineName2	.setFont(new Font("DejaVu Sans", Font.PLAIN, 11));
+	lineName3	.setFont(new Font("DejaVu Sans", Font.PLAIN, 11));
+	lineName4	.setFont(new Font("DejaVu Sans", Font.PLAIN, 11));
+
+	Hover.addBorder(btn_2h);
+	Hover.addBorder(btn_24h);
+	Hover.addBorder(btn_week);
+	Hover.addBorder(btn_4week);
+	Hover.addBorder(lineName1);
+	Hover.addBorder(lineName2);
+	Hover.addBorder(lineName3);
+	Hover.addBorder(lineName4);
+
 	spinnerY	.setModel(new SpinnerListModel(new Integer[] {20, 50, 100, 200, 500, 1000}));
 	spinnerY	.setValue(100);
 	lbl_X		.setHorizontalAlignment(SwingConstants.CENTER);
 	lbl_chart	.setHorizontalAlignment(SwingConstants.CENTER);
-	
+
 	btnGroup.add(btn_2h);
 	btnGroup.add(btn_24h);
 	btnGroup.add(btn_week);

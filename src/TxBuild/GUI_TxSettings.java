@@ -6,15 +6,18 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.JTextArea;
-
 import java.awt.Color;
+import java.awt.Dimension;
 import java.math.BigInteger;
-import BTClib3001.Convert;
+
+import lib3001.crypt.Convert;
+import lib3001.java.DocumentFilter;
+import lib3001.java.Hover;
 
 
 
 /********************************************************************************************************************
-*	V1.2							 Autor: Mr. Maxwell   							vom 29.01.2024					*
+*	V1.4							 Autor: Mr. Maxwell   							vom 27.12.2025					*
 *	Die GUI (JDialog) der Transaktions-Settings für den TxBuilder													*
 ********************************************************************************************************************/
 
@@ -35,22 +38,25 @@ public class GUI_TxSettings extends JDialog
 		
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setTitle("Advanced Transaction Settings");
+		setTitle(GUI.t.t("Transaction settings"));
 		setModal(true);
-		getContentPane().setLayout(null);	
+		getContentPane().setLayout(null);
+		setMinimumSize(new Dimension(600,250));
+		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
+		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
 		
-		JTextArea 	lbl_info 		= new JTextArea("Change the default values only if you know exactly what you're doing!\r\nIncorrect values can lead to the loss of the coins!");
-		JTextArea 	lbl_sequence 	= new JTextArea("Specifies the priority with which the transaction is sent. \r\nHigher values are higher priorities. Default:\"4294967295\" hex: \"ffffffff\"");
-		JTextArea 	lbl_locktime 	= new JTextArea("Specifies the time at which the transaction should be executed.\r\nAt: \"00000000\", immediately.");
+		JTextArea 	lbl_info 		= new JTextArea(GUI.t.t("Change the default values only if you know exactly what you're doing!\nIncorrect values can lead to the loss of the coins!"));
+		JTextArea 	lbl_sequence 	= new JTextArea(GUI.t.t("If sequence number is < 0xFFFFFFFF: Makes the transaction input Replace-By-Fee. Default:\"4294967295\" hex: \"ffffffff\""));
+		JTextArea 	lbl_locktime 	= new JTextArea(GUI.t.t("Specifies the time at which the transaction should be executed.\nAt: \"00000000\", immediately."));
 
-					 setBounds(x, y, 720, 330);
-		lbl_info	.setBounds(10, 11, 699, 38);
+					 setBounds(x,    y,950, 330);
+		lbl_info	.setBounds(10,  11,800, 38);
 		txt_sequence.setBounds(10, 100, 88, 40);
-		txt_sequeHex.setBounds(108, 100, 74, 40);
-		txt_locktime.setBounds(10, 184,88, 40);
-		txt_locktHex.setBounds(108, 184, 74, 40);
-		lbl_sequence.setBounds(201, 97, 475, 43);
-		lbl_locktime.setBounds(201, 179, 475, 43);
+		txt_sequeHex.setBounds(108,100, 74, 40);
+		txt_locktime.setBounds(10, 184, 88, 40);
+		txt_locktHex.setBounds(108,184, 74, 40);
+		lbl_sequence.setBounds(201, 97,800, 70);
+		lbl_locktime.setBounds(201,179,800, 100);
 
 		txt_sequence.setBorder(new TitledBorder(new LineBorder(GUI.color4), 	"Sequence", TitledBorder.LEADING, 	TitledBorder.TOP, GUI.font2, GUI.color3));
 		txt_sequeHex.setBorder(new TitledBorder(new LineBorder(GUI.color4), 	"Hex", 		TitledBorder.LEADING, 	TitledBorder.TOP, GUI.font2, GUI.color3));
@@ -84,7 +90,9 @@ public class GUI_TxSettings extends JDialog
 		txt_locktime	.setFont(GUI.font4);
 		txt_locktHex	.setFont(GUI.font4);
 	
-		
+		Hover.addBorder(txt_sequence);
+		Hover.addBorder(txt_locktime);
+	
 		DocumentFilter df1 = new DocumentFilter("longFilterPositiv");  // DocumentenFilter (Eingabe-Prüfung) 		
 		df1.setLongMaxMinValue(0,4294967295L);
 		txt_sequence.setDocument(df1);

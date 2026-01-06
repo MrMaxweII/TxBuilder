@@ -12,7 +12,7 @@ import org.json.JSONObject;
 
 
 /********************************************************************************************************************
-*	Version 1.5					   					 Autor: Mr. Maxwell   							vom 09.11.2025	*
+*	Version 1.5					   					 Autor: Mr. Maxwell   							vom 24.11.2025	*
 *	Hier wird die RPC-Verbindung zum Bitcoin-Core über Port 8332 hergestellt.										*
 *	- Links: https://developer.bitcoin.org/reference/rpc/index.html													*
 *	- https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list												*
@@ -350,7 +350,7 @@ public class ConnectRPC
 		catch (JSONException e) 
 		{
 			if(str.length()!=0) throw new JSONException(str);
-			else 				throw new JSONException(e);
+			else 				throw new JSONException("Core-Error: data received: NULL");
 		}
 	}
 	

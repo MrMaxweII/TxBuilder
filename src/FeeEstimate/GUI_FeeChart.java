@@ -9,22 +9,26 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 import org.json.JSONObject;
+
 import RPC.ConnectRPC;
 import TxBuild.GUI;
 import TxBuild.GUI_CoreSettings;
+import TxBuild.MyIcons;
 
 
 
 /****************************************************************************************************************************************************
-*	Version 1.0  									 				  	Autor: Mr. Maxwell   										vom 24.02.2024	*
+*	Version 1.2  									 				  	Autor: Mr. Maxwell   										vom 29.12.2025	*
 *	Hier wird das Line-Diagramm für die Tx-Gebühren implementiert.																					*
 *	Die Klasse ist fester Teil vom Tx-Builder.																										*
-*	Die Klasse erbt von JFrame und muss zum starten nur geöfnet werden.																				*
+*	Die Klasse erbt von JFrame und muss zum starten nur geöffnet werden.																			*
 *	Folgende Funktionen sind implementiert:																											*
 *	- Bisherige Gebührensätze werden als JSON-Datei vom Bitcoin-Core per RPC-Befehl geladen (RPC: getblockstats();)									*
 *	- Die Geladenen Datensätze werden 1. in eine JSON-Datei gespeichert. 2. als Chart in einem Line-Diagramm angezeigt.								*
 *	- Es werden maximal 4000 Datensätze (4Wochen) gespeichert und angezeigt. (Ringspeicher)															*
 *	- Die JSON-Datei verwendet als Schlüssel die Tx-Nummer und enthält mehrere Daten zur Fee-Rate													*
+*																																					*
+*	Die Methode loadData() ist nicht Threadsicher und macht Änderungen in der GUI. Bei Problemen sollte SwingWorker verwendet werden!				*
 *****************************************************************************************************************************************************/
 
 
@@ -41,12 +45,13 @@ public class GUI_FeeChart extends JFrame
 	public GUI_FeeChart(int x, int y)
 	{
 		JPanel 		pnl_main = new JPanel(new BorderLayout());	// Haupt-Panlel	
-
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		setTitle("View past fee rate");
+		setTitle(GUI.t.t("View historical fee rate"));
 		setBounds(x, y, 1070, 521);
-		setMinimumSize(new Dimension(600,440));
+		setMinimumSize(new Dimension(800,440));
 		pnl_chart.setBackground(GUI.color1);
+		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
+		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());		
 		
 		txt_meld		.setForeground(Color.red);
 		txt_meld		.setBorder(new EmptyBorder(8, 8, 8, 8));
@@ -59,13 +64,12 @@ public class GUI_FeeChart extends JFrame
 		ld.setColorBorderEdgeGrid(Color.gray);
 		ld.setColorGrid(new Color(230,230,230), Color.white);
 		ld.setFontAxesLabel(new Font("Lucida Sans Unicode", Font.PLAIN, 16));
-		ld.setTextX("Last blocks");
+		ld.setTextX(GUI.t.t("Last blocks"));
 		ld.setTextY("      sat/vB");
-		ld.setTextLine("feerate high"	,1, new Color(247, 147, 26));
-		ld.setTextLine("feerate average",2, Color.magenta);
-		ld.setTextLine("feerate low"	,3, Color.green);
-		ld.setTextLine("feerate min (mempool accept)",4, Color.blue);
-
+		ld.setTextLine(GUI.t.t("feerate high")	,1, new Color(247, 147, 26));
+		ld.setTextLine(GUI.t.t("feerate average"),2, Color.magenta);
+		ld.setTextLine(GUI.t.t("feerate low")	,3, Color.green);
+		ld.setTextLine(GUI.t.t("feerate min (mempool accept)"),4, Color.blue);
 		ld.setVisible(true);
 	
 		pnl_main.add(pnl_chart,BorderLayout.CENTER);
@@ -105,7 +109,8 @@ private void loadData()
 	{
 		public void run() 
 		{ 
-			threadRun = true;		
+			threadRun = true;	
+			JSONObject coreMessage  =null;
 			try
 			{
 				FeeDatabase.load();
@@ -127,8 +132,9 @@ private void loadData()
 					if(threadRun == false) break;	
 					JSONObject data = FeeDatabase.data.optJSONObject(String.valueOf(i));			// Enthält den einzelnen Datensatz
 					if(data == null)
-					{
-						data = peer.getblockstats_my(i).getJSONObject("result");
+					{					
+						coreMessage = peer.getblockstats_my(i);						
+						data = coreMessage.getJSONObject("result");					
 						FeeDatabase.data.put(String.valueOf(i), data);						
 					}
 					reg1.add(data.getJSONArray("feerate_percentiles").getDouble(4));
@@ -143,8 +149,8 @@ private void loadData()
 				txt_meld.setText("");
 			}
 			catch(Exception e)
-			{	
-				txt_meld.setText(e.getMessage());  e.printStackTrace();	
+			{	  		
+				txt_meld.setText(e.getMessage()+"\n"+coreMessage.toString());  e.printStackTrace();	
 			}	
 		}
 	});
