@@ -1,4 +1,5 @@
 package FeeEstimate;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -7,19 +8,21 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
 
 
-/********************************************************************************
- * Diese Draw Klasse ist für Linien-Diagramme optimiert
- * Zeichnet auf ein JLabel
- * Keine Vererbung, Methodenüberflutung ist unerwünscht!
- * Dem Konstruktor wird das JLabel und weitere Parameter übergeben.
- * Dann kann mit den Methoden gezeichnet werden.
- * Viele Koordinaten werden als "Point" übergeben!
- * Diese Klasse ist allgemein gültig und nicht Projectbezogen. Keine Abhängigkeiten
- * Kann in Bibliotheken verwendet werden. (Achtung, es gibt mehrere Draw-Klassen für verschiedene Anwendungen, die aber prizipiel gleich funktionieren)
- ********************************************************************************/
+/****************************************************************************************************************
+*	Version 1.2  						 	Autor: Mr. Maxwell   						vom 12.02.2026			*
+*	Diese Draw Klasse ist für Linien-Diagramme optimiert														*
+*	Zeichnet auf ein JLabel																						*
+*	Keine Vererbung, Methodenüberflutung ist unerwünscht!														*
+*	Dem Konstruktor wird das JLabel und weitere Parameter übergeben.											*
+*	Dann kann mit den Methoden gezeichnet werden.																*
+*	Viele Koordinaten werden als "Point" übergeben!																*
+*	Diese Klasse ist allgemein gültig und nicht Projectbezogen. Keine Abhängigkeiten							*
+*	Kann in Bibliotheken verwendet werden. (Achtung, es gibt mehrere Draw-Klassen für verschiedene Anwendungen)	*
+*****************************************************************************************************************/
 
 
 public class Draw 
@@ -101,30 +104,51 @@ public class Draw
 	
 
 	/** Zeichnet einen Kreis. size = die Größe des Kreises. **/
+	// @Thread wird von einem eigenem Thread ausgeführt!
 	public void setCircle(Point p, int size, Color color)
 	{	
-		Graphics2D g2d = img.createGraphics();
-		g2d.setRenderingHint (RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2d.setPaint(color);
-		g2d.fillOval(p.x, p.y, size, size);
-		g2d.dispose();
-		lbl.setIcon(new ImageIcon(img));
-		lbl.repaint();
+		SwingUtilities.invokeLater(new Runnable() 
+		{
+			public void run()
+			{	
+				Graphics2D g2d = img.createGraphics();
+				g2d.setRenderingHint (RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2d.setPaint(color);
+				g2d.fillOval(p.x, p.y, size, size);
+				g2d.dispose();
+				lbl.setIcon(new ImageIcon(img));
+				lbl.repaint();
+			}
+		});
 	}
 	
 	
-	/** Zeichnet eine Linie,  **/
-	public void setLine(Point p1, Point p2, Color color)
+	/** Zeichnet eine Linie,  
+	 @param p1				Startpunkt der Linie
+	 @param p2				Entpunkt der Linie
+	 @param color			Linienfarbe
+	 @param LineThickness   Liniendicke in Pixel   **/
+	// @Thread wird von einem eigenem Thread ausgeführt!
+	public void setLine(Point p1, Point p2, Color color, int LineThickness)
 	{	
-		Graphics2D g2d = img.createGraphics();
-		g2d.setRenderingHint (RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g2d.setPaint(color);
-		g2d.drawLine(p1.x, p1.y, p2.x, p2.y);
-		g2d.dispose();
-		lbl.setIcon(new ImageIcon(img));
-		lbl.repaint();
+		SwingUtilities.invokeLater(new Runnable() 
+		{
+			public void run()
+			{	
+				Graphics2D g2d = img.createGraphics();
+				g2d.setRenderingHint (RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g2d.setPaint(color);
+				g2d.setStroke(new BasicStroke(LineThickness)); // Linien Dicke
+				g2d.drawLine(p1.x, p1.y, p2.x, p2.y);
+				g2d.dispose();
+				lbl.setIcon(new ImageIcon(img));
+				lbl.repaint();
+			}
+		});
 	}
 
+	
+	
 	
 	
 	/** Zeichnet ein durchgehendes Gitter. 
@@ -140,15 +164,18 @@ public class Draw
 		{
 			Point p1 = new Point(i*b+b, 0);
 			Point p2 = new Point(i*b+b, sizeY);
-			setLine(p1,p2,colorV);
+			setLine(p1,p2,colorV,1);
 		}
 		for(int i=0; i<countH;i++)			// Zeichnet Horizontale Linien
 		{
-			Point p1 = new Point(0, i*h+h);
-			Point p2 = new Point(sizeX, i*h+h);
-			setLine(p1,p2,colorH);
+			Point p1 = new Point(0,    sizeY - (i*h+h));
+			Point p2 = new Point(sizeX,sizeY - (i*h+h));
+			setLine(p1,p2,colorH,1);
 		}
-	}
+	}	
+	
+	
+	
 	
 	
 	
@@ -166,10 +193,10 @@ public class Draw
 		{
 			Point p1 = new Point(i*b+b, 0);
 			Point p2 = new Point(i*b+b, t);
-			setLine(p1,p2,colorV);
+			setLine(p1,p2,colorV,1);
 			p1 = new Point(i*b+b, sizeY-t);
 			p2 = new Point(i*b+b, sizeY);
-			setLine(p1,p2,colorV);
+			setLine(p1,p2,colorV,1);
 		}
 //		for(int i=0; i<countH;i++)			// Zeichnet Horizontale Linien (Buggy, deaktiviert!)
 //		{
@@ -233,14 +260,11 @@ public class Draw
 	 @param color 	Schriftfarbe		**/
 	public void labelingYAchse(String[] txt,Font font, Color color)
 	{
-		int a = sizeY / (txt.length+1);   // Abstand 
-		
-		int j = txt.length-1;
+		int a = sizeY / (txt.length+1);   // Abstand 		
 		for(int i=0; i<txt.length;i++)
 		{
-			Point p = new Point(2, (i*a+5)+a);
-			setText(txt[j], font, p, color);
-			j--;
+			Point p = new Point(2, sizeY - ( (i*a-4)+a));
+			setText(txt[i], font, p, color);
 		}
-	}	
+	}			
 }

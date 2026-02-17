@@ -1,11 +1,15 @@
 package lib3001.btc;
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.awt.Image;
+import java.awt.Insets;
+
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import java.awt.SystemColor;
 import java.text.DecimalFormat;
+import java.util.Base64;
 import javax.swing.JTextArea;
 import java.awt.Color;
 import javax.swing.border.EmptyBorder;
@@ -15,13 +19,16 @@ import org.json.JSONException;
 import lib3001.crypt.Convert;
 import lib3001.qrCode.QRCodeZXING;
 import javax.swing.JSplitPane;
+import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JDialog;
-import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemListener;
+import java.io.ByteArrayInputStream;
 import java.awt.event.ItemEvent;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
@@ -29,9 +36,10 @@ import javax.swing.SwingConstants;
 
 
 /*******************************************************************************************************************************************
-*		V1.14	   												 Autor: Mr. Maxwell  									vom 30.12.2025		*
+*		V1.15	   												 Autor: Mr. Maxwell  									vom 01.02.2026		*
 * 		LIB3001 Bibliotheks Klasse																											*
-*		Letzte Änderung: Feld: 																												*
+*		Letzte Änderungen: 																													*
+*			- Icons für Buttons hinzugefügt. (Alle fest in dieser Klasse)																															*
 *			- QR-Code hinzugefügt																											*
 *			- TX kann in JSON angezeigt werden, btn_JSON ScrolPane eingefügt.																*
 *			- v-size Hinzugefügt (wird nur bei signierten Tx angezeigt),  isSigned wird angezeigt 											*
@@ -89,9 +97,9 @@ public class TxPrinter extends JDialog
 		JTextField 		txt_lockTime	= new JTextField();
 		JTextField 		txt_totalValue	= new JTextField();  		// Die Gebühr ist generell nicht in Transaktionen enthalten und muss daher übergeben werden!
 		JTextField		txt_signed		= new JTextField();			// Gibt an, ob es sich um eine Unsignierte Tx oder eine Signierte Tx handelt.
-		Button 			btn_rawTx 		= new Button("raw Tx");		// Zeigt die Tx in Hex an
-		Button 			btn_JSON 		= new Button("JSON Tx"); 	// Zeigt die Tx in JSON an
-		Button 			btn_qr 			= new Button("QR-Code"); 	// Zeigt die Tx im QR-Code an
+		JButton 		btn_rawTx 		= new JButton("raw");		// Zeigt die Tx in Hex an
+		JButton 		btn_JSON 		= new JButton("JSON"); 	// Zeigt die Tx in JSON an
+		JButton 		btn_qr 			= new JButton("QR Code"); 	// Zeigt die Tx im QR-Code an
 		Checkbox 		hide_prevHash 	= new Checkbox("prev Hash");
 		Checkbox 		hide_prevIndex 	= new Checkbox("prev Index");
 		Checkbox		hide_sig		= new Checkbox("signature");
@@ -110,6 +118,10 @@ public class TxPrinter extends JDialog
 		Font 			font2 			= new Font("SansSerif", Font.PLAIN, 11); 		// Font für Rahmenbeschriftung normal
 		Font 			font3 			= new Font("SansSerif", Font.PLAIN, 14); 		// Font für Rahmenbeschriftung groß
 		Font			font4			= new Font("Ubuntu Mono", Font.PLAIN, 14); 		// Font für Rahmenbeschrifteun
+				
+		btn_rawTx	.setIcon(Base64StringToImageIcon("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAHFJREFUOE/Fk1EOwCAIQ+f9Dz2DSZcKKENN9E8tj4JSns1VKP4NWKz9pDiUYFegEhhNBiAskygLMJAVQAfxAGwTjdXNln3TaQAHaBCCxMEQwPY8gLmflXAfALuoGX8KztwmZibjLIDt/nXRHiAaoBBWARTkMBE8IKqOAAAAAElFTkSuQmCC"));
+		btn_JSON	.setIcon(Base64StringToImageIcon("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAFxJREFUOE9jZKAQMKLp/4/EJ0oOWRFMM7pGdDeiqBtGBhDrf1h4wNWDwoBUzSiGUMUAkImkugLFCxj+IpA46ZcOQDbBwgidBjkSnAipmhKRAxPdcJxyhDIOwcwOALtIHw96+UzDAAAAAElFTkSuQmCC"));
+		btn_qr		.setIcon(Base64StringToImageIcon("iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAJ1JREFUOE+lU0EOwCAIKxcP+/9bd9jFBScLw4om84KBQkoBwc8nPb+SOhozv/97qPgC9leAJsaY972YGSgrYLFmVwxiawPLHQ1SjK8YdWQCDvjmOIB6AlKAen3LMGGpBqaqWkbZxhhjj4jGIPZg/m5RAHSGL7NdEadjXY2xkQoMq2eSLZJ1xNaYtjAo7qYSRaSrzO7SJ9K9yBZp69BvFchDEZ8pbZ8AAAAASUVORK5CYIIA"));
 		
 		txt_txHash		.setBounds(10,  10, 540, 36);
 		txt_version		.setBounds(10,  60, 100, 36);
@@ -174,6 +186,10 @@ public class TxPrinter extends JDialog
 		separator		.setForeground(SystemColor.inactiveCaption);
 		txt_meldungen	.setBackground(SystemColor.menu);
 	
+		btn_rawTx		.setMargin(new Insets(0,0,0,0));
+		btn_JSON		.setMargin(new Insets(0,0,0,0));
+		btn_qr			.setMargin(new Insets(0,0,0,0));
+		
 		txt_txHash		.setText(Convert.byteArrayToHexString(Convert.swapBytesCopy(tx.getTxHash())));		
 		txt_version		.setText(String.valueOf(tx.getVersion()));	
 		txt_isWitness	.setText(String.valueOf(tx.getWitness().length!=0));	
@@ -578,5 +594,27 @@ public class TxPrinter extends JDialog
 		hide_address	.addItemListener(ml);
 		hide_h160		.addItemListener(ml);
 		hide_value		.addItemListener(ml);
-	}	
+	}
+	
+	
+	
+	
+	//---------------------------------------------------------- Hilfs Methoden ---------------------------------------------------------------
+	
+	
+	// Konvertiert ein Base64 String in ein ImageIcon
+	private static ImageIcon Base64StringToImageIcon(String str) 
+	{
+		try
+		{
+			byte[] imageBytes = Base64.getDecoder().decode(str);
+			Image image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+			return new ImageIcon(image);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}	
+		return null;
+	}		
 }

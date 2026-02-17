@@ -10,9 +10,9 @@ import lib3001.crypt.Convert;
 
 
 /***********************************************************************************************************************
-*		Version 2.5    						Autor: Mr. Maxwell   						vom 23.12.2023					*
+*		Version 2.6    						Autor: Mr. Maxwell   						vom 21.01.2026					*
 * 		LIB3001 Bibliotheks Klasse																						*
-*		Letzte Änderung: getHash160_RedeemScript_P2SH() hinzugefügt														*
+*		Letzte Änderung: Base64 PrivateKey Erkennung wieder implementiert.												*
 *		Nicht statische Klasse die ein Private-Key Object erstellt.	Für verschiedene Cois ausgelegt.					*
 *		Es sind mehrere Konstrukor´s implementiert die den Private Key aus diversen Formaten erkennen.					*
 *		Dem Konstruktor müssen zusätzlich die CoinParameter des jeweiligen Coin´s übergeben werden.						*
@@ -202,6 +202,7 @@ private byte[] txtToHexPrivKey(String str) throws IllegalArgumentException
 		case 16:  	return Convert.hexStringToByteArray(str);  														// 16 = Hexa
 		case 58:  	return base58_PrivateKey_to_HexPrivateKey(str);													// 58 = Base58
 		case 6:     return Convert.hexStringToByteArray(base6_PrivateKey_to_HexPrivateKey(str));  					// 6 = Base6
+		case 64:	return base64_PrivateKey_to_HexPrivateKey(str);
 		default:	break;
 	}
 	return null;
@@ -218,9 +219,10 @@ private byte[] txtToHexPrivKey(String str) throws IllegalArgumentException
 private int getFormat(String str)
 {
 	if(str.equals(""))   																												return 0;	// prüfen ob leer String
-	if(str.length()==64 && 	str.matches("[0-9a-fA-F]+")) 																				return 16;	// prüfen auf Hexa
+	if(str.length()==64  && str.matches("[0-9a-fA-F]+")) 																				return 16;	// prüfen auf Hexa
 	if(						str.matches("[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+")) 								return 58;	// prüfen auf Base58
 	if(str.length()==109 && str.matches("[123456-]+")) 																					return 6;	// prüfen auf Base6
+	if(str.length()==44  && str.matches("[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=]+") &&  str.charAt(43)=='=')return 64;	// prüfen auf Base64
 	return -1;
 }
 
@@ -264,6 +266,14 @@ private String base6_PrivateKey_to_HexPrivateKey(String str)
 	while(erg.length() < 64) erg="0"+erg;																		// String wird vorne mit nullen aufgefüllt
 	return erg;
 }
+
+
+
+private byte[] base64_PrivateKey_to_HexPrivateKey(String str)
+{
+	return Base64.getDecoder().decode(str);
+}
+
 
 
 //Erstellt das RedeemScript für eine SegWit P2SH Adresse die mit 3 beginnt. 

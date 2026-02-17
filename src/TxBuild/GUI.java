@@ -40,6 +40,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.OverlayLayout;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.border.BevelBorder;
@@ -61,11 +62,12 @@ import lib3001.crypt.Convert;
 import lib3001.java.Animated;
 import lib3001.java.Hover;
 import lib3001.java.MyFont;
+import lib3001.qrCode.QRCodeZXING;
 import lib3001.qrCode.QrCapture;
 
 
 /***********************************************************************************************************************************************
-*				   											 Autor: Mr. Maxwell   							vom 30.12.2025						*
+*				   											 Autor: Mr. Maxwell   							vom 14.02.2026						*
 *	Die GUI für den TxBuilder																													*
 *************************************************************************************************************************************************/
 
@@ -102,7 +104,7 @@ public class GUI extends JFrame
 
 	
 	public final static String 	progName		= "TxBuilder";									// Program Name		
-	public final static String	version 		= "V1.3.2";										// Version der Anwendung
+	public final static String	version 		= "V1.3.3";										// Version der Anwendung
 	public final static String	autor 			= "Mr. Maxwell";								// Name Autor
 	public final static byte[] MAINNET  = {(byte) 0xf9,(byte) 0xbe,(byte) 0xb4,(byte) 0xD9};
 	public final static byte[] TESTNET3 = {(byte) 0x0b,(byte) 0x11,(byte) 0x09,(byte) 0x07};
@@ -151,6 +153,7 @@ public class GUI extends JFrame
 	public static JMenuItem 	mItem_txLoad	= new JMenuItem();								// zum Laden einer Transaktion aus der Blockchain
 	public static JMenuItem 	mItem_txJSON	= new JMenuItem();								// Konvertiert die Transaktion in ein JSON-Format
 	public static JMenuItem 	mItem_sigHash	= new JMenuItem();								// Berechnet den Signature-Hash einer Transaktion
+	public static JMenuItem		mItem_QRShow	= new JMenuItem();								// Funktion zum algemeinen Anzeigen von QR-Codes
 	public static JMenuItem 	mItem_corSet	= new JMenuItem();								// Menüpunkt CoreSettings
 	public static JMenuItem 	mItem_txSet		= new JMenuItem();								// Menüpunkt Transaktions-Settings
 	public static JMenuItem 	mItem_feeSet	= new JMenuItem();								// Menüpunkt Gebühren-Settings
@@ -159,7 +162,7 @@ public class GUI extends JFrame
 	public static int			debugMode		= 0;											// DebugModus: 0=kein=Default, 1=MainNet, 2=TestNet3
 	public static int 			posX = 400;
 	public static int 			posY = 250;               	
-	public static int 			countSearchBlocks = 100;										// Anzahl der Blöcke die bei "Get Transaktion from Blockchain" rückwirkend durchsucht werden
+	public static int 			countSearchBlocks = 1000;										// Anzahl der Blöcke die bei "Get Transaktion from Blockchain" rückwirkend durchsucht werden
 	public static int	  		toolTipSetDismissDelay = 20000;									// Alle ToolTips werden nach dieser Zeit ausgeblendet. Kann in der Config angepasst werden.
 	public static boolean 		toolTipEnabled 	= true;											// Alle ToolTips können hier global ausgeschaltet werden. Kann in der Config angepasst werden.
 	public static String[] 		comboBoxList 	= new String[100];								// Die beiden Combo-Boxen für die In- und Outputs werden mit diesen Elementen initialisiert
@@ -211,17 +214,18 @@ public class GUI extends JFrame
 		mItem_txLoad	.setText(t.t("Get transaction from blockchain"));	
 		mItem_txJSON	.setText(t.t("Get JSON from transaction"));		
 		mItem_sigHash	.setText(t.t("Get Signature Hash"));				
+		mItem_QRShow	.setText(t.t("show QR code"));
 		mItem_corSet	.setText(t.t("BitcoinCore connection settings"));	
 		mItem_txSet		.setText(t.t("Transaction settings"));			
 		mItem_feeSet	.setText(t.t("Fee settings"));					
 		
-		GUI_CoreSettings.btn_auth.setText(t.t("Authentication Method: Cookie"));
-		GUI_CoreSettings.btn_path.setText(t.t("Bitcoin Core Path:"));
-		GUI_FeeSettings.feeFrom.setText(new String[]{t.t("First output"),t.t("Last output")});
-		GUI_FeeSettings.sliderMax.setText(t.getTextArray("sliderMax_Language-Array",10));
-		GUI_FeeSettings.sliderMin.setText(t.getTextArray("sliderMin_Language-Array",12));
-		GUI_FeeSettings.acceptMax.setText(t.getTextArray("acceptMax_Language-Array",11));
-		GUI_FeeSettings.acceptMin.setText(new String[] {"0",t.t("mempoolminfee")});
+		GUI_CoreSettings.btn_auth	.setText(t.t("Authentication Method: Cookie"));
+		GUI_CoreSettings.btn_path	.setText(t.t("Bitcoin Core Path:"));
+		GUI_FeeSettings.feeFrom		.setText(new String[]{t.t("First output"),t.t("Last output")});
+		GUI_FeeSettings.sliderMax	.setText(t.getTextArray("sliderMax_Language-Array",10));
+		GUI_FeeSettings.sliderMin	.setText(t.getTextArray("sliderMin_Language-Array",12));
+		GUI_FeeSettings.acceptMax	.setText(t.getTextArray("acceptMax_Language-Array",11));
+		GUI_FeeSettings.acceptMin	.setText(new String[] {"0",t.t("mempoolminfee")});
 
 		pnl_fee			.setBorder(new TitledBorder(new LineBorder(color4), 	t.t("Fee"), 				TitledBorder.LEADING, 	TitledBorder.TOP, 		font2, color3));
 		cBox_inCount	.setBorder(new TitledBorder(new EmptyBorder(0, 0, 0, 0),t.t("Input count"),  		TitledBorder.LEADING, 	TitledBorder.TOP, 		font3, color3));
@@ -303,8 +307,6 @@ public class GUI extends JFrame
 //		pnl_lp		.setOpaque(false);
 		
 		
-		
-		
 	
 		for(int i=0;i<100;i++) {comboBoxList[i]=String.valueOf(i+1);}
 		cBox_inCount	.setModel(new DefaultComboBoxModel(comboBoxList));	
@@ -357,6 +359,7 @@ public class GUI extends JFrame
 		mItem_feeSet	.setBackground(color1);
 		mItem_txLoad	.setBackground(color1);
 		mItem_txJSON	.setBackground(color1);
+		mItem_QRShow	.setBackground(color1);
 		mItem_sigHash	.setBackground(color1);
 		progressBar		.setBackground(color1);
 		btn_testNet		.setBackground(color1);
@@ -376,11 +379,23 @@ public class GUI extends JFrame
 		lbl_viewTxHex	.setBorder(new EmptyBorder(1,1,1,1));		  
 		lbl_qrCode		.setBorder(new EmptyBorder(1,1,1,1));	      
 		lbl_save		.setBorder(new EmptyBorder(1,1,1,1));			  
-				
+		
+		menu_functio	.setIcon(MyIcons.chain);
+		menu_Setting	.setIcon(MyIcons.settings);
+		mItem_publis	.setIcon(MyIcons.send);
+		mItem_import	.setIcon(MyIcons.open);
+		mItem_feeRate	.setIcon(MyIcons.chart);
+		mItem_txLoad	.setIcon(MyIcons.load2);
+		mItem_txJSON	.setIcon(MyIcons.json);
+		mItem_QRShow	.setIcon(MyIcons.qrCode);
+		mItem_corSet	.setIcon(MyIcons.connect);
+		mItem_txSet		.setIcon(MyIcons.txSettings);
+		mItem_feeSet	.setIcon(MyIcons.fee);
 		lbl_qrCode		.setIcon(MyIcons.qrCode);
 		lbl_viewTx		.setIcon(MyIcons.viewTx);
 		lbl_viewTxHex	.setIcon(MyIcons.hex);
 		lbl_save		.setIcon(MyIcons.save);
+		
 				
 		cBox_inCount	.setMaximumSize(new Dimension(15000, 32767));
 		cBox_outCount	.setMaximumSize(new Dimension(15000, 32767));
@@ -464,6 +479,7 @@ public class GUI extends JFrame
 		menu_functio.add(mItem_feeRate);
 		menu_functio.add(mItem_txLoad);
 		menu_functio.add(mItem_txJSON);
+		menu_functio.add(mItem_QRShow);
 		menu_functio.add(mItem_sigHash);
 		menuBar		.add(Box.createHorizontalStrut(20));
 		menuBar		.add(menu_Setting);
@@ -552,8 +568,8 @@ public class GUI extends JFrame
 					pnl_in.add(pnlA_in[i]);
 			
 					btn_inQR[i] = new JLabel();
-					btn_inQR[i].setIcon(MyIcons.qrCode);
-					btn_inQR[i].setText(String.valueOf(i+1));  // Index wird hier als Text verwendet um mit Reflection den Index später im Thread zu erkennen. Und als Zeilen-Aufzählung
+					btn_inQR[i].setIcon(MyIcons.qrScan);
+					btn_inQR[i].setText(String.valueOf(i+1));  
 					btn_inQR[i].setHorizontalTextPosition(2);
 					btn_inQR[i].setToolTipText(t.t("ToolTipText_btn_QR"));
 					Hover.addBorder(btn_inQR[i]);
@@ -581,33 +597,9 @@ public class GUI extends JFrame
 					btn_inQR[i].addMouseListener(new MouseAdapter() 
 					{
 						public void mouseClicked(MouseEvent e) 
-						{
-							int index = Integer.valueOf(((JLabel) e.getComponent()).getText())-1;	// Achtung: Hier wird Reflection verwendet um den den Schleifen-Index[i] zu erhalten.
-							Thread t = new Thread(new Runnable() 
-							{
-								public void run() 
-								{														
-									try
-									{
-										btn_inQR[index].setOpaque(true);
-										btn_inQR[index].setBackground(Color.gray);
-										Thread.sleep(100);
-										btn_inQR[index].setOpaque(false);
-										btn_inQR[index].setBackground(GUI.color1);
-										txt_meld.setText("");
-										frame.setEnabled(false);
-										QrCapture qr = new QrCapture(null,GUI.t.t("Scan input address: ")+String.valueOf(index+1), frame.getX()+25, frame.getY()+190);	
-										String p2 = qr.getResult();
-										qr.close();								
-										if(p2.equals("")) throw new IOException(GUI.t.t("User abort"));								
-										txt_inAdr[index].setText(p2);
-										TxBuildAction.coreTxOutSet = null;
-									}
-									catch(Exception ex) { txt_meld.setForeground(Color.red); txt_meld.setText(ex.getMessage());};	
-									frame.setEnabled(true);
-								}
-							});
-							if(btn_inQR[index].isEnabled()) t.start();	
+						{							
+							int index = Integer.valueOf(((JLabel) e.getComponent()).getText())-1;	// Achtung: Hier wird Reflection verwendet um den den Schleifen-Index[i] zu erhalten.	
+							qrScan(btn_inQR[index], txt_inAdr[index]);	
 						}
 					});
 					
@@ -622,7 +614,7 @@ public class GUI extends JFrame
 					{
 						@Override
 						public void insertUpdate(DocumentEvent e) 
-						{																		
+						{																										
 							TxBuildAction.coreTxOutSet = null;
 							for(int i=0;i<txInCount;i++) 
 							{
@@ -635,7 +627,7 @@ public class GUI extends JFrame
 						}
 						@Override
 						public void removeUpdate(DocumentEvent e) 
-						{
+						{		
 							TxBuildAction.coreTxOutSet = null;						
 							if(allInputFieldsEdited()) Animated.start(btn_loadTx, true);
 							else					   Animated.stop(btn_loadTx);		
@@ -690,7 +682,7 @@ public class GUI extends JFrame
 					pnl_out.add(pnlA_out[i]);
 					
 					btn_outQR[i] = new JLabel();
-					btn_outQR[i].setIcon(MyIcons.qrCode);
+					btn_outQR[i].setIcon(MyIcons.qrScan);
 					btn_outQR[i].setText(String.valueOf(i+1));  // Index wird hier als Text verwendet um mit Reflection den Index später im Thread zu erkennen. Und als Zeilen-Aufzählung
 					btn_outQR[i].setHorizontalTextPosition(2);
 					btn_outQR[i].setToolTipText(t.t("ToolTipText_btn_QR"));
@@ -730,39 +722,7 @@ public class GUI extends JFrame
 						public void mouseClicked(MouseEvent e) 
 						{
 							int index = Integer.valueOf(((JLabel) e.getComponent()).getText())-1;	// Achtung: Hier wird Reflection verwendet um den den Schleifen-Index[i] zu erhalten.
-							Thread t = new Thread(new Runnable() 				
-							{
-								public void run() 
-								{														
-									try
-									{
-										btn_outQR[index].setOpaque(true);
-										btn_outQR[index].setBackground(Color.gray);
-										Thread.sleep(100);
-										btn_outQR[index].setOpaque(false);
-										btn_outQR[index].setBackground(GUI.color1);
-										txt_meld.setText("");
-										frame.setEnabled(false);
-										QrCapture qr = new QrCapture(null,GUI.t.t("Scan output address: ")+String.valueOf(index+1), frame.getX()+560, frame.getY()+190);	
-										String p2 = qr.getResult();
-										qr.close();								
-										if(p2.equals("")) throw new IOException(GUI.t.t("User abort"));								
-																		
-										// Dieser Aufruf (Das schreiben in das Textfeld) muss zwingend threadsicher, verzögert aufgerufen werden!
-										// Da das TextFeld Document-Listender enthält kommt es sonnst zum Abstzurz!
-										javax.swing.SwingUtilities.invokeLater(new Runnable() 
-										{
-											public void run() 
-											{
-												txt_outAdr[index].setText(p2);
-											}
-										});									
-									}
-									catch(Exception ex) {txt_meld.setForeground(Color.red); txt_meld.setText(ex.getMessage());};	
-									frame.setEnabled(true);
-								}
-							});
-							t.start();	
+							qrScan(btn_outQR[index], txt_outAdr[index]);			
 						}
 					});			
 								
@@ -869,20 +829,19 @@ public class GUI extends JFrame
 				if( (jo.optJSONObject("error"))!=null ) 
 				{
 					if((jo.getJSONObject("error").getInt("code") == -5))
-					{
+					{	
 						// Wenn Bitcoin Error "code":-5, auftritt, und der Hash stimmt, dann fehlt dem Core die Datenbank "-txindex" Dadurch kann er keine Transaktionen anhand dem Tx-Hash finden!
 						// Aber er kann sie finden, wenn der Blockhash mit angegeben wird. 
-						// Also werden in dem Fall einfach die letzen 100 oder 1000 Blöcke durchsucht.
-
+						// Also werden in dem Fall einfach die letzen 100 oder 1000 Blöcke durchsucht.					
+						lbl_progress.setVisible(true);
+						frame.setEnabled(false);
+						txt_meld.setForeground(Color.red);
+						txt_meld.setText(countSearchBlocks+" blocks are searched! Please wait!");
+						// @Thread Alle GUI-Anpassungen sind in der EDT (mit Außnahme der Exception)
 						Thread t = new Thread(new Runnable() 
 						{
-							@Override
 							public void run() 
 							{
-								lbl_progress.setVisible(true);
-								frame.setEnabled(false);
-								txt_meld.setForeground(Color.red);
-								txt_meld.setText(countSearchBlocks+" blocks are searched! Please wait!");
 								try
 								{							
 									JSONObject jo1 = new JSONObject(peer.get("getblockcount", null));											// getblockcount = Gibt die letze Blocknummer an.
@@ -896,21 +855,42 @@ public class GUI extends JFrame
 											Transaktion sigTx = new Transaktion(Convert.hexStringToByteArray(jo2.getString("result")),0); 
 											byte[] magic;
 											if(btn_testNet.isSelected()) magic = TESTNET3;
-											else						 magic = MAINNET;
-											TxPrinter tx = new TxPrinter(magic, sigTx, getX()+5, getY()+30);
-											tx.setModal(false);
-											tx.setVisible(true);
-											System.out.println(peer.decoderawtransaction(jo2.getString("result")).toString(1));
-											txt_meld.setText("");
+											else						 magic = MAINNET;											
+											SwingUtilities.invokeLater(new Runnable() 
+											{
+												public void run()
+												{
+													TxPrinter tx = new TxPrinter(magic, sigTx, getX()+5, getY()+30);
+													tx.setModal(false);
+													tx.setVisible(true);
+													txt_meld.setText("");
+												}
+											});
 											break;
 										}
 										last_blockNr--;
-										if(i==countSearchBlocks-1) txt_meld.setText(jo2.getJSONObject("error").toString(1));	
+										if(i==countSearchBlocks-1)
+										{
+											String str = jo2.getJSONObject("error").toString(1);	
+											SwingUtilities.invokeLater(new Runnable() 
+											{
+												public void run()
+												{
+													txt_meld.setText(str);	
+												}
+											});
+										}
 									}
 								}
-								catch(Exception e){txt_meld.setForeground(Color.red); txt_meld.setText(e.getMessage());}	
-								frame.setEnabled(true);
-								lbl_progress.setVisible(false);	
+								catch(Exception e){txt_meld.setForeground(Color.red); txt_meld.setText(e.getMessage());}			
+								SwingUtilities.invokeLater(new Runnable() 
+								{
+									public void run()
+									{
+										frame.setEnabled(true);
+										lbl_progress.setVisible(false);	
+									}
+								});
 							}
 						});
 						t.start();
@@ -974,6 +954,24 @@ public class GUI extends JFrame
 			catch (Exception e1) {txt_meld.setForeground(Color.red); txt_meld.setText(e1.getMessage()); e1.printStackTrace();}		
 		}
 	});			
+	
+	
+	
+	// Erstellt einen QR-Code aus beliebigen Daten.
+	mItem_QRShow.addActionListener(new ActionListener() 
+	{
+		public void actionPerformed(ActionEvent e)
+		{
+			try
+			{
+				txt_meld.setText("");
+				String str = (String) JOptionPane.showInputDialog(frame,t.t("Creates a QR code from any text."),t.t("show QR code"),-1, MyIcons.qrCode42x42, null, null);	
+				if(str==null || str.length()<=0) return;
+				QRCodeZXING.printQR_on_JDialog(str, str, GUI.color1, Color.black, GUI.frame.getX()+250, GUI.frame.getY()+5);
+			} 
+			catch (Exception e1)  {txt_meld.setForeground(Color.red); txt_meld.setText(e1.getMessage()); e1.printStackTrace();}	
+		}
+	});
 	
 	
 	
@@ -1153,7 +1151,7 @@ public class GUI extends JFrame
 	sliderFee.addChangeListener(new ChangeListener() 
 	{
 		public void stateChanged(ChangeEvent event) 
-		{
+		{					
 			double valueIn = Double.parseDouble(txt_totalValIn.getText().replace(",", "."));
 			double feeRate = (double)sliderFee.getValue() / 100.0;
 			double vSize   = Double.parseDouble(txt_txVSize.getText().replace(",", "."));
@@ -1242,6 +1240,7 @@ public class GUI extends JFrame
 		mItem_feeSet	.setBackground(color6);
 		mItem_txLoad	.setBackground(color6);
 		mItem_txJSON	.setBackground(color6);
+		mItem_QRShow	.setBackground(color6);
 		mItem_sigHash	.setBackground(color6);
 		pnl_oben		.setBackground(color1);
 		pnl_unten		.setBackground(color1);
@@ -1270,7 +1269,65 @@ public class GUI extends JFrame
 	
 	
 	
+	// Führt den QR-Scan der Bitcoin Adressen von allen Input und Autput Feldern durch und nimmt entsprechende Anpassungen an der GUI vor.
+	// Beim QR-Code-Scan wird ein blockierender eigener Thread gestartet.
+	// btn = der Button als JLabel, der das Scan-Ereignis auslöst.
+	// txt = das Text-Feld in das die BTC-Adresse nach dem Scan eingetragen wird.
+	private static void qrScan(JLabel btn, JTextField txt)
+	{
+		btn.setOpaque(true);
+		btn.setBackground(Color.gray);
+		// @Thread alle GUI Anpassungen werden Threadsicher in der EDT ausgeführt!
+		Thread t = new Thread(new Runnable() 
+		{
+			public void run() 
+			{														
+				try
+				{
+					Thread.sleep(100);				
+					SwingUtilities.invokeLater(new Runnable() 
+					{
+						public void run()
+						{
+							btn.setOpaque(false);
+							btn.setBackground(GUI.color1);
+							txt_meld.setText("");
+							frame.setEnabled(false);						
+						}
+					});
+					QrCapture qr = new QrCapture(null,"Scan address", btn.getLocationOnScreen().x, btn.getLocationOnScreen().y);	
+					String p2 = qr.getResult();
+					qr.close();		
+					if(p2.equals("")) throw new IOException(GUI.t.t("User abort"));								
+					SwingUtilities.invokeLater(new Runnable() 
+					{
+						public void run()
+						{
+							txt.setText(p2);
+							frame.setEnabled(true);
+						}
+					});
+				}
+				catch(Exception ex) 
+				{ 
+					SwingUtilities.invokeLater(new Runnable() 
+					{
+						public void run()
+						{
+							txt_meld.setForeground(Color.red); 
+							txt_meld.setText(ex.getMessage());
+							frame.setEnabled(true);
+						}
+					});
+				};	
+			}
+		});
+		if(btn.isEnabled()) t.start();	
+	}
 	
+	
+	
+
 	
 
 	
@@ -1353,7 +1410,7 @@ public class GUI extends JFrame
 	// Dieses ungewöhnliche Exception-Handling soll 1.falsche Ausgaben in diesen Feldern unter allen Umständen verhindern, und 2.auch nicht zu einem Abstzurz des Threads führen.
 	public static void valueOutVerify()
 	{
-		// System.out.println("valueOutVerify()              ausgelöst.");
+		//System.out.println("valueOutVerify() ausgelöst. Ist in EDT: "+SwingUtilities.isEventDispatchThread());	
 		try
 		{
 			double valueOut = 0.0;
@@ -1381,7 +1438,6 @@ public class GUI extends JFrame
 	
 	
 	
-	
 	// Prüft die Bedingungen für den Fee-Slider und Aktiviert Ihn
 	public static void feeSliderActivated()
 	{
@@ -1403,6 +1459,7 @@ public class GUI extends JFrame
 		}
 		catch(Exception e1){txt_meld.setForeground(Color.red); txt_meld.setText(t.t("Average Fee Rate could not be loaded!\n") + e1.getMessage()); e1.printStackTrace();}
 	}
+	
 	
 	
 	// Gibt true zurück, wenn alle Input-Adressen mindestens 20 Zeichen enthalten.

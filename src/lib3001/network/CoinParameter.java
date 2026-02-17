@@ -38,18 +38,18 @@ public class CoinParameter
 // Konstruktor
 private CoinParameter(String symbol, String name, String p2pPort, String rpcPort, String dnsSeed, String magic, String genesisBlockHash, String pref_PrivKey, String pref_PubKey, String pref_P2SH, String bip44, String bech32)
 {
-											this.symbol           =	 symbol;
-											this.name             =	 name;
-	if(!p2pPort.equals(""))			this.p2pPort          =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(p2pPort)));
-	if(!rpcPort.equals(""))			this.rpcPort          =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(rpcPort)));
-	if(!dnsSeed.equals(""))			this.dnsSeed          =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(dnsSeed)));
+										this.symbol           =	 symbol;
+										this.name             =	 name;
+	if(!p2pPort.equals(""))				this.p2pPort          =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(p2pPort)));
+	if(!rpcPort.equals(""))				this.rpcPort          =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(rpcPort)));
+	if(!dnsSeed.equals(""))				this.dnsSeed          =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(dnsSeed)));
 	if(!magic.equals(""))				this.magic            =	 Convert.hexStringToByteArray(magic);
 	if(!genesisBlockHash.equals(""))	this.genesisBlockHash =	 Convert.hexStringToByteArray(genesisBlockHash);
 	if(!pref_PrivKey.equals(""))		this.pref_PrivKey     =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(pref_PrivKey)));
-	if(!pref_PubKey.equals(""))		this.pref_PubKey      =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(pref_PubKey)));
+	if(!pref_PubKey.equals(""))			this.pref_PubKey      =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(pref_PubKey)));
 	if(!pref_P2SH.equals(""))			this.pref_P2SH        =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(pref_P2SH)));
 	if(!bip44.equals(""))				this.bip44        	  =	 Convert.hexStringToByteArray_oddLength(Integer.toHexString(Integer.valueOf(bip44)));
-											this.bech32        	  =	 bech32;
+										this.bech32        	  =	 bech32;
 }
 
 

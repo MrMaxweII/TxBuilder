@@ -9,6 +9,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.json.JSONArray;
@@ -27,7 +28,7 @@ import lib3001.qrCode.QRCodeZXING;
 
 
 /********************************************************************************************************************
-*				   					 Autor: Mr. Maxwell   							vom 02.12.2025					*
+*				   					 Autor: Mr. Maxwell   							vom 05.02.2026					*
 *	ActionListener für den TxBuild																					*
 *	Hier wird die Funktion des TxBuild implemenetier und die GUI gesteuert											*
 *********************************************************************************************************************/
@@ -51,14 +52,15 @@ public class TxBuildAction
 	
 	
 
-// - Prüft ob alle Felder ausgefüllt sind.
+// - Prüft ob alle Felder ausgefüllt sind. 
+// - Diese Methode wird bei jeder Eingabe ausgelöst.
 // - Aktiviert dann die Tx-Buttens
 // - Dadurch wird die Tx vom Core per RPC geladen.
-// - Die Geladene Tx schreibt dann die Virtual-Size in das Feld
+// - Die geladene Tx schreibt dann die Virtual-Size in das Feld
 // - Dadurch wird dann die Feerate berechnet
 public static void verifyOutputsAndCalcFeeRate() 
-{			    	
-//	System.out.println("verifyOutputsAndCalcFeeRate() ausgelöst.");
+{	
+	// System.out.println("verifyOutputsAndCalcFeeRate() ausgelöst. Ist in EDT: "+SwingUtilities.isEventDispatchThread());
 	GUI.txt_meld.setText("");
 	GUI.txt_feeRate.setText(""); 
 	GUI.txt_txVSize.setText(""); 
@@ -146,15 +148,16 @@ public static void enalbleTxButtons(boolean enable)
 		Animated.stop(GUI.lbl_viewTxHex);
 		Animated.stop(GUI.lbl_qrCode);
 		Animated.stop(GUI.lbl_save);
-	}
-	
+	}	
 }
 
 
 
-	
+// Einige Action-Listeners aus der GUI sind hier her ausgelagert.	
 public static void actions()
 {
+	
+	
 	// Lädt die Transaktionen mit dem Bitcoin-Core von der Blockchain
 	GUI.btn_loadTx.addMouseListener(new MouseAdapter() 
 	{
@@ -179,11 +182,11 @@ public static void actions()
 						GUI.txt_inValue[i].setText("");
 						GUI.txt_inAdr[i].setEnabled(false);
 						GUI.btn_inQR[i].setEnabled(false);
-					}
-					
+					}					
+			
+					// @Thread Alle GUI Anpassungen sind in EDT!
 					Thread thread1 = new Thread(new Runnable() 
 					{
-						@Override
 						public void run() 
 						{								
 							ConnectRPC core = new ConnectRPC(ip,port,name,pw);
@@ -202,47 +205,74 @@ public static void actions()
 							}
 							catch(Exception ex)
 							{
-								ex.printStackTrace();
-								GUI.txt_meld.setForeground(Color.red);
-								GUI.txt_meld.setText(ex.getMessage());
+								SwingUtilities.invokeLater(new Runnable() 
+								{
+									public void run() 
+									{										
+										GUI.txt_meld.setForeground(Color.red);
+										GUI.txt_meld.setText(ex.getMessage());
+										ex.printStackTrace();
+									}
+								});
+
 							}
 							
-							for(int i=0; i<GUI.txt_inValue.length;i++) 
-							{ 
-								GUI.txt_inAdr[i].setEnabled(true);
-								GUI.btn_inQR[i].setEnabled(true);	
-							}
-							GUI.btn_loadTx.setVisible(true);
-							GUI.btn_cancel.setVisible(false);
-							GUI.cBox_inCount.setEnabled(true);
-							GUI.menu_Setting.setEnabled(true);
-							GUI.menu_functio.setEnabled(true);
+							SwingUtilities.invokeLater(new Runnable() 
+							{
+								public void run() 
+								{
+									for(int i=0; i<GUI.txt_inValue.length;i++) 
+									{ 
+										GUI.txt_inAdr[i].setEnabled(true);
+										GUI.btn_inQR[i].setEnabled(true);	
+									}
+									GUI.btn_loadTx.setVisible(true);
+									GUI.btn_cancel.setVisible(false);
+									GUI.cBox_inCount.setEnabled(true);
+									GUI.menu_Setting.setEnabled(true);
+									GUI.menu_functio.setEnabled(true);								
+								}	
+							});		
 						}
 					});
 					
 					
+					
 					// Steuert die Process-Bar
+					GUI.progressBar.setVisible(true);
+					GUI.lbl_progress.setVisible(true);
+					// @Thread Alle GUI Anpassungen sind in EDT!
 					Thread thread2 = new Thread(new Runnable() 
 					{
-						@Override
 						public void run() 
 						{
 							ConnectRPC core = new ConnectRPC(ip,port,name,pw);
 							core.setTimeOut(Integer.valueOf(GUI_CoreSettings.txt_timeOut.getText()));
-							GUI.progressBar.setVisible(true);
-							GUI.lbl_progress.setVisible(true);
 							for(int i=0; i<600; i++ )
 							{
 								try 
 								{
 									Thread.sleep(1000);
-									JSONObject jo = core.get_scantxoutset("status", new String[] {""}, new String[] {""});
-									GUI.progressBar.setValue(jo.getJSONObject("result").getInt("progress"));
+									JSONObject jo = core.get_scantxoutset("status", new String[] {""}, new String[] {""});	
+									int value = jo.getJSONObject("result").getInt("progress");
+									SwingUtilities.invokeLater(new Runnable() 
+									{
+										public void run() 
+										{
+											GUI.progressBar.setValue(value);   
+										}				
+									});							
 								}
-								catch(Exception ex)
-								{
-									GUI.progressBar.setVisible(false);
-									GUI.lbl_progress.setVisible(false);
+								catch(Exception ex)					// Dieser catch-Block wird verwendet um den Abchluss/Abbruch des Core-Process zu erkennen.
+								{									// Denn wenn der Core hier mit einem "Fehler" antwortet, bedeutet dies zuverlässig, das der eigentliche Auftrag nicht mehr bearbeitet wird.
+									SwingUtilities.invokeLater(new Runnable() 
+									{
+										public void run() 
+										{
+											GUI.progressBar.setVisible(false);
+											GUI.lbl_progress.setVisible(false);
+										}				
+									});	
 									break;
 								}
 							}
@@ -267,12 +297,11 @@ public static void actions()
 			{
 				Animated.start(GUI.btn_loadTx,true);
 				// Steuert die Process-Bar
+				// @Thread Alle GUI Anpassungen sind in EDT!
 				Thread thread3 = new Thread(new Runnable() 
 				{
-					@Override
 					public void run() 
-					{
-						
+					{	
 						ConnectRPC core = new ConnectRPC(ip,port,name,pw);
 						core.setTimeOut(Integer.valueOf(GUI_CoreSettings.txt_timeOut.getText()));
 						try 
@@ -281,9 +310,15 @@ public static void actions()
 						}
 						catch(Exception ex)
 						{
-							ex.printStackTrace();
-							GUI.txt_meld.setForeground(Color.red);
-							GUI.txt_meld.setText(ex.getMessage());
+							SwingUtilities.invokeLater(new Runnable() 
+							{
+								public void run()
+								{
+									ex.printStackTrace();
+									GUI.txt_meld.setForeground(Color.red);
+									GUI.txt_meld.setText(ex.getMessage());
+								}
+							});					
 						}
 					}
 				});
@@ -431,44 +466,51 @@ public static void actions()
 
 
 
-	//	Wertet das Ergebnis vom Core (get_scantxoutset) aus und und schreibt die Daten in die GUI
+	// Wertet das Ergebnis vom Core (get_scantxoutset) aus und und schreibt die Daten in die GUI
+	// Muss in denn EDT Thread, da die Methode von einem eigenen Thread ausgeführt wird!
 	private static void scantxoutsetResult(JSONObject jo) throws JSONException
 	{	
-		try{GUI.txt_meld.setForeground(Color.red); GUI.txt_meld.setText("BitcoinCore Error:\n"+ jo.getJSONObject("error").getString("message"));}   // Gibt Fehler-Meldungen vom Core aus
-		catch(Exception e) {};
-		try
+		SwingUtilities.invokeLater(new Runnable() 
 		{
-			JSONObject jo_result = jo.getJSONObject("result");
-			System.out.println(jo_result.toString(1));
-			
-			if(jo_result.getBoolean("success") == true) 													// Wenn Ergebnis fehlerfrei abgeschlossen ist.
+			public void run() 
 			{
-				double[] valueTemp = new double[GUI.txt_inAdr.length];										// Temp-Variable wird benutzt um die Beträge zu addiern
-				for(int i=0; i<valueTemp.length; i++) valueTemp[i] = 0.0;									// Temp-Variable wird auf 0 gesetzt.
-				
-				GUI.txt_totalValIn.setText(String.format("%.8f", jo_result.getDouble("total_amount")));		
-				JSONArray unspents = jo_result.getJSONArray("unspents");
-				for(int i=0;i<unspents.length();i++)
+				try{GUI.txt_meld.setForeground(Color.red); GUI.txt_meld.setText("BitcoinCore Error:\n"+ jo.getJSONObject("error").getString("message"));}   // Gibt Fehler-Meldungen vom Core aus
+				catch(Exception e) {};
+				try
 				{
-					JSONObject jo_el =  unspents.getJSONObject(i);
-					String addr = jo_el.getString("desc");
-					addr = addr.substring(addr.indexOf("(")+1, addr.indexOf(")"));
+					JSONObject jo_result = jo.getJSONObject("result");
+					System.out.println(jo_result.toString(1));
 					
-					for(int j=0; j<GUI.txt_inAdr.length;j++)
+					if(jo_result.getBoolean("success") == true) 													// Wenn Ergebnis fehlerfrei abgeschlossen ist.
 					{
-						if(addr.equals(GUI.txt_inAdr[j].getText()))
+						double[] valueTemp = new double[GUI.txt_inAdr.length];										// Temp-Variable wird benutzt um die Beträge zu addiern
+						for(int i=0; i<valueTemp.length; i++) valueTemp[i] = 0.0;									// Temp-Variable wird auf 0 gesetzt.
+						
+						GUI.txt_totalValIn.setText(String.format("%.8f", jo_result.getDouble("total_amount")));		
+						JSONArray unspents = jo_result.getJSONArray("unspents");
+						for(int i=0;i<unspents.length();i++)
 						{
-							valueTemp[j] = valueTemp[j] + jo_el.getDouble("amount");  
+							JSONObject jo_el =  unspents.getJSONObject(i);
+							String addr = jo_el.getString("desc");
+							addr = addr.substring(addr.indexOf("(")+1, addr.indexOf(")"));
+							
+							for(int j=0; j<GUI.txt_inAdr.length;j++)
+							{
+								if(addr.equals(GUI.txt_inAdr[j].getText()))
+								{
+									valueTemp[j] = valueTemp[j] + jo_el.getDouble("amount");  
+								}
+								GUI.txt_inAdr[j].setBackground(GUI.color1);
+							}
 						}
-						GUI.txt_inAdr[j].setBackground(GUI.color1);
+						for(int i=0; i<valueTemp.length; i++)  GUI.txt_inValue[i].setText(String.format("%.8f",(Math.round(valueTemp[i]*100000000.0)/100000000.0)));  
+						GUI.valueOutVerify();
+						verifyOutputsAndCalcFeeRate();
 					}
-				}
-				for(int i=0; i<valueTemp.length; i++)  GUI.txt_inValue[i].setText(String.format("%.8f",(Math.round(valueTemp[i]*100000000.0)/100000000.0)));  
-				GUI.valueOutVerify();
-				verifyOutputsAndCalcFeeRate();
+				}   
+				catch(Exception e) {e.printStackTrace();};		
 			}
-		}   
-		catch(Exception e) {e.printStackTrace();};	
+		});				
 	}
 
 

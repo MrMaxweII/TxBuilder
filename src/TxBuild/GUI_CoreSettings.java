@@ -68,8 +68,8 @@ public class GUI_CoreSettings extends JDialog
 		setTitle(GUI.t.t("BitcoinCore connection settings"));
 		setBounds(x, y, 720, 450);
 		setMinimumSize(new Dimension(700, 400));;	
-		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
-		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
+		setIconImage(MyIcons.connect.getImage());			
+	
 		setModal(true);
 		JPanel  contentPane	= new JPanel();
 		JPanel 	pnl_haupt 	= new JPanel(null);
@@ -92,7 +92,7 @@ public class GUI_CoreSettings extends JDialog
 		txt_uName	.setBounds(10, 175,410, 40);
 		txt_pw		.setBounds(10, 225,410, 40);
 		txt_timeOut	.setBounds(550, 125, 150, 40);
-		btn_cTest	.setBounds(550, 220, 144, 23);
+		btn_cTest	.setBounds(550, 220, 144, 29);
 		btn_path	.setBounds(240, 85, 180, 20);
 		lbl_path	.setBounds(425, 85, 345, 20);
 		btn_auth	.setBounds(12, 85, 225, 24);
@@ -125,6 +125,8 @@ public class GUI_CoreSettings extends JDialog
 		txt_timeOut	.setBackground(Color.white);
 		txt_meld	.setBackground(GUI.color1);
 		btn_auth	.setBackground(GUI.color1);	
+		
+		btn_cTest	.setIcon(MyIcons.connect);
 		
 		lbl_info	.setForeground(GUI.color4);
 		txt_meld	.setForeground(Color.black);

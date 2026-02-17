@@ -1,21 +1,30 @@
 package FeeEstimate;
+import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JToggleButton;
+import javax.swing.Popup;
+import javax.swing.PopupFactory;
 import javax.swing.SpinnerListModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
@@ -27,15 +36,15 @@ import lib3001.java.Hover;
 
 
 /****************************************************************************************************************************************************
-*	Version 1.2  									 				  	Autor: Mr. Maxwell   										vom 31.12.2025	*
+*	Version 1.3  									 				  	Autor: Mr. Maxwell   										vom 09.02.2026	*
 *																																					*
 *	Letzte Änderung: 																																*
+*	scalingDiagramY() erweitert,																													*
 *	Hover für Buttens hinzugefügt		Kann für Bibliothek wieder entfnert werden.																	*
 *	Anpassung: GUI.t.t(...) 			Kann für Bibliothek wieder entfnert werden.																	*
 *																																					*
 *	Ertellt ein Liniendiagramm in ein JPanel																										*
 *	Klasse arbeitet unabhängit und kann in Bibliotheken verwendet werden. 																			*
-*	Abhängigkeit nur: Draw Klasse für dieses Linien-Diagramm, keine externen Bibliotheken erforderlich												*
 *	Das LinienDiagramm ist angepasst für den TxBuilder, kann bei bedarf aber erweitert werden.														*
 *	Es sind 8 Daten-Reihen implementiert. Kann erweitert werden.																					*
 *	Diese Klasse ist NICHT vererbt. (Methodenüberflutung ist hier unerwünscht)																		*
@@ -55,6 +64,14 @@ import lib3001.java.Hover;
 
 public class LineDiagram 
 {
+	public static double	scalY		= 100;					// Aktiver Scal-Y Wert, wird von der Config angepasst. Default = 100;
+	public static int 		btnNr		= 1;						// Aktiver Time-Button, wird von der Config angepasst. Default = 1, Kann nur {1,2,3,4} sein!
+	
+	
+	
+	
+	
+	
 	private JPanel		  pnl_main;									// Das übergebene Haupt Panel
 	private JLabel 		  lbl_chart	= new JLabel();					// Das Label mit dem LinienDiagramm, ohne die Beschriftungsleisten					
 	private JLabel 		  lbl_X 	= new JLabel("X-Axis");			// Achsen Beschreibung X
@@ -79,7 +96,6 @@ public class LineDiagram
 	private double  	  sizeX = 889;								// Breite des LinienDiagramms (double zu korrekten Berechnen) Wird dynamisch angepasst
 	private double  	  sizeY = 300;								// Höhe   des LinienDiagramms (double zu korrekten Berechnen) Wird dynamisch angepasst
 	private double		  scalX = 1;								// Skallierungs-Faktor X-Achse, entspricht dem akteullem maximalen X-Wert
-	private double		  scalY = 1;								// Skallierungs-Faktor Y-Achse, entspricht dem aktuellem maximalen Y-Wert
 	
 	private ArrayList<Double> data1 = new ArrayList<Double>();		//  Daten Reihe1 
 	private ArrayList<Double> data2 = new ArrayList<Double>();		//  Daten Reihe2 
@@ -112,12 +128,13 @@ public class LineDiagram
 	private JLabel lineName7 = new JLabel();						// Linen-Bezeichnung der Linie 7
 	private JLabel lineName8 = new JLabel();						// Linen-Bezeichnung der Linie 8
 
-
+	private Popup popup;												// Das kleine Fenster mit Inforamtion welches erscheint, wenn in das Diagramm geklickt wird.
 	
 	
 	
 //------------------------------------------- Konstruktor --------------------------------------------
-	
+
+// scalY ist der Wert der Y-Achse mit dem das LineDiagramm als erstes angezeigt wird.	
 public LineDiagram(JPanel pnl)
 {
 	this.pnl_main = pnl;
@@ -190,8 +207,8 @@ public LineDiagram(JPanel pnl)
 	Hover.addBorder(lineName3);
 	Hover.addBorder(lineName4);
 
-	spinnerY	.setModel(new SpinnerListModel(new Integer[] {20, 50, 100, 200, 500, 1000}));
-	spinnerY	.setValue(100);
+	spinnerY	.setModel(new SpinnerListModel(new Integer[] {5, 10, 20, 50, 100, 200, 500, 1000}));
+	spinnerY	.setValue((int)scalY);
 	lbl_X		.setHorizontalAlignment(SwingConstants.CENTER);
 	lbl_chart	.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -307,9 +324,6 @@ public LineDiagram(JPanel pnl)
 	});
 
 	
-
-
-
 	
 	
 	// Ändert die X-Skallierung auf "2 Stunden = 12 Blöcke"
@@ -319,6 +333,7 @@ public LineDiagram(JPanel pnl)
 		{
 			String[] strX = {"11","10"," 9"," 8"," 7"," 6"," 5"," 4"," 3"," 2"," 1"};
 			scalingDiagramX(strX,12);
+			btnNr = 1;
 		}
 	});
 	
@@ -330,6 +345,7 @@ public LineDiagram(JPanel pnl)
 		{
 			String[] strX = {"140","130","120","110","100","90","80","70","60","50","40","30","20","10"};
 			scalingDiagramX(strX,150);
+			btnNr = 2;
 		}
 	});
 	
@@ -341,6 +357,7 @@ public LineDiagram(JPanel pnl)
 		{
 			String[] strX = {"900","800","700","600","500","400","300","200","100"};
 			scalingDiagramX(strX,1000);
+			btnNr = 3;
 		}
 	});
 	
@@ -352,6 +369,7 @@ public LineDiagram(JPanel pnl)
 		{
 			String[] strX = {"3500","3000","2500","2000","1500","1000","500"};
 			scalingDiagramX(strX,4000);
+			btnNr = 4;
 		}
 	});
 	
@@ -361,17 +379,73 @@ public LineDiagram(JPanel pnl)
 	{
 		public void stateChanged(ChangeEvent e) 
 		{
+			spinnerY.setEnabled(false);
 			scalingDiagramY();
+			// Verhindert ein Mehrmaliges drücken hintereinander, was zu Fehlern führte.
+			Timer timer = new Timer(200, ev -> {spinnerY.setEnabled(true);});
+			timer.setRepeats(false);
+			timer.start();		
 		}
 	});
 	
 
 	
+	
+	// Chart Inline Panel. 
+	// Zeigt ein Fenster mit Daten an, wenn mit der Maus in das Diagramm gedrückt wird.
+	lbl_chart.addMouseListener(new MouseAdapter() 
+	{
+		public void mouseReleased(MouseEvent e) 
+		{
+			if (popup != null) {popup.hide(); popup = null;}		
+			Point p = e.getLocationOnScreen();		
+			double yPixel = lbl_chart.getSize().height - e.getY();  // Anzahl der Pixel von unten auf der Y-Achse	
+			double value = (yPixel / sizeY) * scalY;
+			DecimalFormat df = new DecimalFormat("0.00");
+			JLabel lbl= new JLabel();
+			lbl.setOpaque(true);
+			lbl.setBackground(Color.white);
+			BufferedImage img = (BufferedImage) ((ImageIcon) lbl_chart.getIcon()).getImage();
+			lbl.setBorder(new SpeechBubbleBorder(0,3,0,3, new Color(img.getRGB(e.getX(), e.getY()))));
+			lbl.setText("<html>" + df.format(value) + "<font size=-2>  sat/vB</html>");
+			popup = PopupFactory.getSharedInstance().getPopup(pnl_main, lbl, p.x - lbl.getPreferredSize().width         , p.y - lbl.getPreferredSize().height);
+			popup.show();
+		}
+	});
+	
+	
+	
+	// Löschte das Popup wieder immer wenn die Maus gedrückt wird, innerhalb des Programmes, egal wo hin.
+	Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() 
+	{
+		public void eventDispatched(AWTEvent e) 
+		{
+			if (!(e instanceof MouseEvent)) return;
+			MouseEvent me = (MouseEvent) e;
+			if (me.getID() != MouseEvent.MOUSE_PRESSED) return;
+	        if (popup != null) 
+	        {
+	        	popup.hide();
+	        	popup = null;
+	        }
+		}
+	},AWTEvent.MOUSE_EVENT_MASK);
+	
+	
+	
+	
+	
+	
 	// Erfasst Größenänderung des Haupt-Panels und skalliert das Diagramm entsprechend an.
 	pnl_main.addComponentListener(new ComponentResizeEndListener() 
 	{
 		public void resizeTimedOut() 
-		{
+		{			
+	        if (popup != null) 
+	        {
+	        	popup.hide();
+	        	popup = null;
+	        }
 			sizeX = pnl_main.getSize().width-165;	
 			sizeY = pnl_main.getSize().height-150;	
 			drawChart	= new Draw(lbl_chart,(int)sizeX,(int)sizeY);	
@@ -411,7 +485,6 @@ public LineDiagram(JPanel pnl)
 /** Muss zum erstmaligen Zeichnen des Liniendiagrammes aufgerufen werden, nach dem möglche Parameter eingestellt wurden sind **/	
 public void setVisible(boolean v)
 {
-	scalY = (int) spinnerY.getValue();
 	lbl_chart	.setBorder(new LineBorder(color2));
 	drawChart.clr(color0);
 	drawChart.setGrid(20, 10, color3, color4);
@@ -419,15 +492,22 @@ public void setVisible(boolean v)
 	draw_xU.clr(pnl_main.getBackground());
 	draw_yL.clr(pnl_main.getBackground());
 	draw_yR.clr(pnl_main.getBackground());
-	String[] strX = {"140","130","120","110","100","90","80","70","60","50","40","30","20","10"};
-	String[] strY = {"5","10","15","20","25","30","35","40","45","50","55","60","65","70","75","80","85","90","95"};
-	draw_xU	.labelingXAchse(strX, font1, color1);
-	draw_yL	.labelingYAchse(strY, font1, color1);
-	draw_yR	.labelingYAchse(strY, font1, color1);
-	btn_2h.doClick();
+	//String[] strX = {"140","130","120","110","100","90","80","70","60","50","40","30","20","10"};
+	//String[] strY = {"5","10","15","20","25","30","35","40","45","50","55","60","65","70","75","80","85","90","95"};
+	//draw_xU	.labelingXAchse(strX, font1, color1);
+	//draw_yL	.labelingYAchse(strY, font1, color1);
+	//draw_yR	.labelingYAchse(strY, font1, color1);
+	scalingDiagramY();
+	if(btnNr == 1) btn_2h.doClick();
+	if(btnNr == 2) btn_24h.doClick();
+	if(btnNr == 3) btn_week.doClick();
+	if(btnNr == 4) btn_4week.doClick();
 	pnl_main.setVisible(v);
 }
 	
+
+
+
 /** Hintergrundfarbe innerhalb des Linien-Diagramm **/
 public void setBackground(Color color0)
 {
@@ -497,6 +577,7 @@ public void setTextLine(String txt, int nr, Color color)
  	color	die LinenFarbe dieser Linie   **/
 public void addPoint(double value, int nr, Color color)
 {
+	// @Thread wird von einem eigenem Thread ausgeführt!
 	if(nr==1) {addPoint(value, data1, color);  colorData1 = color;};
 	if(nr==2) {addPoint(value, data2, color);  colorData2 = color;};
 	if(nr==3) {addPoint(value, data3, color);  colorData3 = color;};
@@ -528,21 +609,28 @@ public ArrayList<Double> getData(int nr)
 
 //  Fügt einen Punkt im LinienDiagramm einer Datenreihe hinzu und zeichnet ihn 
 //	value 	der Wert als Double
-//	data. 	die Datenreihe selbst muss hier übergeben werden.		**/
-public void addPoint(double value, ArrayList<Double> data, Color color)
+//	data. 	die Datenreihe selbst muss hier übergeben werden.		
+// @Thread wird von einem eigenem Thread ausgeführt!
+private void addPoint(double value, ArrayList<Double> data, Color color)
 {
 	data.add(value);
-	double px = sizeX - (data.size()-1) * (sizeX / scalX) -1;	 // -2 , Mitte des Kreises wird justiert
-	double py = sizeY - value 		    * (sizeY / scalY) - 1; // -2 , Mitte des Kreises wird justiert
+	double px = sizeX - (data.size()-1) * (sizeX / scalX) -1;	// -2 , Mitte des Kreises wird justiert
+	double py = sizeY - value 		    * (sizeY / scalY) - 1; 	// -2 , Mitte des Kreises wird justiert
 	if(data.size()>=2) 
 	{ 
 		double valueLast = data.get(data.size()-2);
 		double pxl = sizeX - (data.size()-2) * (sizeX / scalX);	 	
 		double pyl = sizeY - valueLast 	  * (sizeY / scalY) ;  
-		drawChart.setLine(new Point((int)pxl,(int)pyl), new Point((int)px+1,(int)py+1), color);
+		drawChart.setLine(new Point((int)pxl,(int)pyl), new Point((int)px+1,(int)py+1), color, 2);
 	}
 	drawChart.setCircle(new Point((int)px,(int)py), 3, color);
-	lbl_load.setVisible(false);
+	SwingUtilities.invokeLater(new Runnable() 
+	{
+		public void run()
+		{
+			lbl_load.setVisible(false);			
+		}
+	});	
 }
 
 
@@ -574,7 +662,7 @@ private void writeLine(ArrayList<Double> data, Color color)
 			double valueLast = data.get(i-1);
 			double pxl = sizeX - (i-1) * (sizeX / scalX);	 	
 			double pyl = sizeY - valueLast 	  * (sizeY / scalY) ;  
-			drawChart.setLine(new Point((int)pxl,(int)pyl), new Point((int)px+1,(int)py+1), color);
+			drawChart.setLine(new Point((int)pxl,(int)pyl), new Point((int)px+1,(int)py+1), color, 2);
 		}
 		drawChart.setCircle(new Point((int)px,(int)py), 3, color);
 	}
@@ -603,11 +691,13 @@ private void scalingDiagramX(String[] labelingXAxis, int scalX)
 
 //Skalliert das Diagramm auf die Y-Achse (Eigentlich wird nur die Y-Skala angepasst)
 private void scalingDiagramY() 
-{
+{	
 	scalY = (int) spinnerY.getValue();
 	String[] str = new String[19];
 	for(int i=0; i<19; i++)
 	{
+		if(scalY==5) 	{str[i] = String.valueOf((i+1)/4.0);			}
+		if(scalY==10) 	{str[i] = String.valueOf((i+1)/2.0);			}
 		if(scalY==20) 	{str[i] = String.valueOf(i+1);					}
 		if(scalY==50)	{str[i] = String.valueOf((double)(i+1)*2.5);	}	
 		if(scalY==100)	{str[i] = String.valueOf((i+1)*5);				}
@@ -642,7 +732,7 @@ abstract class ComponentResizeEndListener extends ComponentAdapter
 implements ActionListener 
 {
     private final Timer timer;
-    public ComponentResizeEndListener() {this(200);}
+    public ComponentResizeEndListener() {this(100);}
     public ComponentResizeEndListener(int delayMS) 
     {
         timer = new Timer(delayMS, this);

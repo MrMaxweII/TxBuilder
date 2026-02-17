@@ -84,8 +84,8 @@ public class GUI_FeeSettings extends JDialog
 		setBounds(x, y, 740, 350);
 		setMinimumSize(new Dimension(670,300));
 		setModal(true);		
-		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
-		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
+		setIconImage(MyIcons.fee.getImage());			
+	
 		lbl_satVb[0] 			= new JLabel("sat/vB");	
 		lbl_satVb[1] 			= new JLabel("sat/vB");	
 		lbl_satVb[2] 			= new JLabel("sat/vB");	

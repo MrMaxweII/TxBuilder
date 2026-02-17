@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import org.json.JSONObject;
 
@@ -18,7 +19,7 @@ import TxBuild.MyIcons;
 
 
 /****************************************************************************************************************************************************
-*	Version 1.2  									 				  	Autor: Mr. Maxwell   										vom 29.12.2025	*
+*	Version 1.3  									 				  	Autor: Mr. Maxwell   										vom 08.02.2026	*
 *	Hier wird das Line-Diagramm für die Tx-Gebühren implementiert.																					*
 *	Die Klasse ist fester Teil vom Tx-Builder.																										*
 *	Die Klasse erbt von JFrame und muss zum starten nur geöffnet werden.																			*
@@ -27,19 +28,19 @@ import TxBuild.MyIcons;
 *	- Die Geladenen Datensätze werden 1. in eine JSON-Datei gespeichert. 2. als Chart in einem Line-Diagramm angezeigt.								*
 *	- Es werden maximal 4000 Datensätze (4Wochen) gespeichert und angezeigt. (Ringspeicher)															*
 *	- Die JSON-Datei verwendet als Schlüssel die Tx-Nummer und enthält mehrere Daten zur Fee-Rate													*
-*																																					*
-*	Die Methode loadData() ist nicht Threadsicher und macht Änderungen in der GUI. Bei Problemen sollte SwingWorker verwendet werden!				*
 *****************************************************************************************************************************************************/
 
 
 
 public class GUI_FeeChart extends JFrame
 {
-	private JPanel 			pnl_chart	= new JPanel();					// Das Panel in das nur das Chart-Label kommt
-	private LineDiagram 	ld 			= new LineDiagram(pnl_chart);	// Das Line-Diagramm 
-	public static JTextArea txt_meld 	= new JTextArea();				// Alle Meldungen und Fehler
-	private boolean 		threadRun	= false;						// Beendet den Thread LoadData
-	private int 			aktualBlockNr = 0;							// Die Aktuelle Blocknummer wird geladen und hier gespeichert
+	
+	private JPanel 			pnl_chart	= new JPanel();								// Das Panel in das nur das Chart-Label kommt
+	private LineDiagram 	ld 			= new LineDiagram(pnl_chart);		// Das Line-Diagramm 
+	public static JTextArea txt_meld 	= new JTextArea();							// Alle Meldungen und Fehler
+	private boolean 		threadRun	= false;									// Beendet den Thread LoadData
+	private int 			aktualBlockNr = 0;										// Die Aktuelle Blocknummer wird geladen und hier gespeichert
+
 	
 	
 	public GUI_FeeChart(int x, int y)
@@ -50,9 +51,8 @@ public class GUI_FeeChart extends JFrame
 		setBounds(x, y, 1070, 521);
 		setMinimumSize(new Dimension(800,440));
 		pnl_chart.setBackground(GUI.color1);
-		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
-		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());		
-		
+		setIconImage(MyIcons.chart.getImage());			
+				
 		txt_meld		.setForeground(Color.red);
 		txt_meld		.setBorder(new EmptyBorder(8, 8, 8, 8));
 		txt_meld		.setEditable(false);
@@ -69,7 +69,7 @@ public class GUI_FeeChart extends JFrame
 		ld.setTextLine(GUI.t.t("feerate high")	,1, new Color(247, 147, 26));
 		ld.setTextLine(GUI.t.t("feerate average"),2, Color.magenta);
 		ld.setTextLine(GUI.t.t("feerate low")	,3, Color.green);
-		ld.setTextLine(GUI.t.t("feerate min (mempool accept)"),4, Color.blue);
+		ld.setTextLine(GUI.t.t("feerate min (mempool accept)"),4, Color.blue);	
 		ld.setVisible(true);
 	
 		pnl_main.add(pnl_chart,BorderLayout.CENTER);
@@ -103,12 +103,14 @@ public class GUI_FeeChart extends JFrame
 // Lädt die Daten per RPC, oder aus der Datei
 // Zeichnet anschließend das Liagramm
 // Muss als eigener Thread ausgeführt werden!
+// Alle GUI-Anpassungen sind in der EDT. (Die Methoden "Draw.setCircle()" und "Draw.setLine()" sind die zeichnenden Methoden und werden in der ETD ausgeführt.)
 private void loadData()
 {
+	// @Thread
 	Thread t = new Thread(new Runnable() 
 	{
 		public void run() 
-		{ 
+		{ 	
 			threadRun = true;	
 			JSONObject coreMessage  =null;
 			try
@@ -144,12 +146,18 @@ private void loadData()
 					whriteToDiagram(reg1, 1, new Color(247, 147, 26));
 					whriteToDiagram(reg2, 2, Color.magenta);
 					whriteToDiagram(reg3, 3, Color.green);
-					whriteToDiagram(reg4, 4, Color.blue);
+					whriteToDiagram(reg4, 4, Color.blue);				
 				}	
-				txt_meld.setText("");
+				SwingUtilities.invokeLater(new Runnable() 
+				{
+					public void run()
+					{
+						txt_meld.setText("");
+					}
+				});
 			}
 			catch(Exception e)
-			{	  		
+			{	  						
 				txt_meld.setText(e.getMessage()+"\n"+coreMessage.toString());  e.printStackTrace();	
 			}	
 		}
@@ -161,6 +169,7 @@ private void loadData()
 
 // glättet Kurve und zeichnet die Datenpunkte in das LinienDiagram
 // Dazu wird ein kleines Register angelegt, welches die letzten Datenpukte zur Glättung speichert. 
+// @Thread wird von einem eigenem Thread ausgeführt!
 private void whriteToDiagram(ArrayList<Double> reg, int nr, Color color)
 {
 	if(reg.size()==1)  

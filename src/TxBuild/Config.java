@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import javax.swing.DefaultComboBoxModel;
 import org.json.JSONObject;
+import FeeEstimate.LineDiagram;
 
 
 
@@ -75,6 +76,8 @@ public static void load()
 			GUI.cBox_language				.setSelectedIndex(jo.getInt("languageIndex"));
 			GUI_FeeSettings.maxAccaptFeeRate = jo.getInt("maxAccaptFeeRate");
 			GUI_FeeSettings.estimateProfile  = jo.getInt("estimateProfile");
+			LineDiagram.scalY				 = jo.getInt("FeeChart_scalY");
+			LineDiagram.btnNr				 = jo.getInt("FeeChart_btnNr");
 			GUI.toolTipEnabled				 = jo.getBoolean("toolTipEnabled");
 			GUI.toolTipSetDismissDelay		 = jo.getInt("toolTipSetDismissDelay");
 			GUI_FeeSettings.fallBackEstimaFeeRate=jo.getDouble("fallBackEstimaFeeRate");
@@ -127,10 +130,12 @@ public static void save()
 		jo.put("languageIndex", GUI.cBox_language.getSelectedIndex());
 		jo.put("maxAccaptFeeRate",GUI_FeeSettings.maxAccaptFeeRate);
 		jo.put("estimateProfile", GUI_FeeSettings.estimateProfile);
+		jo.put("FeeChart_scalY", LineDiagram.scalY);
+		jo.put("FeeChart_btnNr", LineDiagram.btnNr);
 		jo.put("toolTipEnabled", GUI.toolTipEnabled);
 		jo.put("toolTipSetDismissDelay", GUI.toolTipSetDismissDelay);
 		jo.put("fallBackEstimaFeeRate", GUI_FeeSettings.fallBackEstimaFeeRate);
-			
+	
 		BufferedWriter br = new BufferedWriter(new FileWriter(fileName));
 		br.write(jo.toString(1));
 		br.close();

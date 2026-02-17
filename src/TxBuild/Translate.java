@@ -18,7 +18,7 @@ import org.json.JSONObject;
 
 
 	/************************************************************************************************************************************
-	 *	Translate V1.1                                            Mr.Maxwell                                             05.01.2026		*
+	 *	Translate V1.1                                            Mr.Maxwell                                             31.01.2026		*
 	 *	Hier wird die Sprachumschaltung für verschiedene Sprachen implementiert.														*
 	 *																																	*
 	 *	Bedienung:																														*
@@ -170,6 +170,8 @@ public class Translate
  	
  	private void setEnglishJSON() throws JSONException
  	{
+ 		
+ 		
  		englishTextJSON.put("Fee"							,"Fee");
  		englishTextJSON.put("Info"							,"Info");
  		englishTextJSON.put("Value"							,"Value (BTC)");
@@ -177,7 +179,7 @@ public class Translate
  		englishTextJSON.put("1 week"						,"1 week");
  		englishTextJSON.put("4 week"						,"4 week");
  		englishTextJSON.put("QR-Code"						,"View QR code from Tx");
- 		englishTextJSON.put("open Tx"						,"open Tx");
+ 		englishTextJSON.put("open Tx"						,"load Tx");
  		englishTextJSON.put("show Tx"						,"show Tx");
  		englishTextJSON.put("send Tx"						,"send Tx");
  		englishTextJSON.put("Settings"						,"Settings");
@@ -200,8 +202,9 @@ public class Translate
  		englishTextJSON.put("Virtual size"					,"Virtual size (vB)");
  		englishTextJSON.put("Fee settings"					,"Fee settings");
  		englishTextJSON.put("First output"					,"First output");
- 		englishTextJSON.put("scan QR code"					,"scan QR code");
+ 		englishTextJSON.put("scan QR code"					,"scan QR");
  		englishTextJSON.put("feerate high"					,"feerate high");
+ 		englishTextJSON.put("show QR code"					,"show QR code");
  		englishTextJSON.put("No connect!\n"					,"No connect!\n");
  		englishTextJSON.put("mempoolminfee"					,"mempoolminfee");
  		englishTextJSON.put("open csv file"					,"open csv file");
@@ -236,6 +239,7 @@ public class Translate
  		englishTextJSON.put("Send signed transaction"		,"Send signed transaction");
  		englishTextJSON.put("View historical fee rate"		,"View historical fee rate");
  		englishTextJSON.put("Total Value Input = Null"		,"Total Value Input = Null");
+ 		englishTextJSON.put("Only .txn files allowed!"		, "Only .txn files allowed!");
  		englishTextJSON.put("sliderMax_Language-Array",new JSONArray(new String[]{"Estimated in 1 blocks", "Estimated in 2 blocks", "Estimated in 3 blocks", "Estimated in 4 blocks", "Estimated in 5 blocks", "Estimated in 6 blocks", "Estimated in 7 blocks", "Estimated in 8 blocks", "Estimated in 9 blocks", "Estimated in 10 blocks"}));
  		englishTextJSON.put("sliderMin_Language-Array",new JSONArray(new String[]{"mempoolminfee", "Estimated in 1000 blocks", "Estimated in   900 blocks", "Estimated in   800 blocks", "Estimated in   700 blocks", "Estimated in   600 blocks", "Estimated in   500 blocks", "Estimated in   400 blocks", "Estimated in   300 blocks", "Estimated in   200 blocks", "Estimated in   100 blocks","0"}));
  		englishTextJSON.put("acceptMax_Language-Array",new JSONArray(new String[]{"Highest Estimated Fee Rate", "(Highest Fee Rate) * 2", "(Highest Fee Rate) * 3", "(Highest Fee Rate) * 4", "(Highest Fee Rate) * 5", "(Highest Fee Rate) * 6", "(Highest Fee Rate) * 7", "(Highest Fee Rate) * 8", "(Highest Fee Rate) * 9", "(Highest Fee Rate) * 10", "absolute maximum"}));
@@ -249,7 +253,8 @@ public class Translate
  		englishTextJSON.put("cancel loading from Blockchain","✖  cancel loading from Blockchain");
  		englishTextJSON.put("Create an unsigned transaction","Create an unsigned transaction");
  		englishTextJSON.put("Get transaction from blockchain","Get transaction from blockchain");
- 		englishTextJSON.put("BitcoinCore connection settings","BitcoinCore connection settings");
+ 		englishTextJSON.put("BitcoinCore connection settings","BitcoinCore connection settings");	
+ 		englishTextJSON.put("Creates a QR code from any text.","Creates a QR code from any text.\nE.g. Bitcoin address, transaction, or anything else from which a QR code should be created.");
  		englishTextJSON.put("Password to be used for encryption:","Password to be used for encryption:");
  		englishTextJSON.put("Tx Error: No correct transaction!\n","Tx Error: Invalid transaction!\n");
  		englishTextJSON.put("Success! Transaction has been send!\n","Success! Transaction has been send!\n");
@@ -257,7 +262,7 @@ public class Translate
  		englishTextJSON.put("Average Fee Rate could not be loaded!\n","Average Fee Rate could not be loaded!\n");
  		englishTextJSON.put("Which output should the fee be deducted","Which output should the fee be deducted");
  		englishTextJSON.put("No address with an available amount found.","No address with an available amount found.");
- 		englishTextJSON.put("Insert signed transactions into this field","Insert signed transaction (Hex) into this field");
+ 		englishTextJSON.put("Insert signed transactions into this field","Drag and drop the transaction or enter it in hexa");
  		englishTextJSON.put("The Fees is higher than 0,001 BTC \nIgnore?","The Fees is higher than 0,001 BTC \nIgnore?");
  		englishTextJSON.put("This is a test network. Coins have no value!","This is a test network. Coins have no value!");
  		englishTextJSON.put("Calculate Signature Hash\nInput RAW transaction:","Calculate Signature Hash\nInput RAW transaction:");
@@ -340,9 +345,9 @@ public class Translate
  		germanTextJSON.put("1 week"							,"1 Woche");
  		germanTextJSON.put("4 week"							,"4 Wochen");
  		germanTextJSON.put("QR-Code"						,"QR-Code von Transaktion anzeigen");
- 		germanTextJSON.put("open Tx"						,"Transaktion Öffnen");
- 		germanTextJSON.put("show Tx"						,"Transaktion Anzeigen / Prüfen");
- 		germanTextJSON.put("send Tx"						,"Transaktion Senden");
+ 		germanTextJSON.put("open Tx"						,"Tx Laden");
+ 		germanTextJSON.put("show Tx"						,"Tx Anzeigen");
+ 		germanTextJSON.put("send Tx"						,"Tx Senden");
  		germanTextJSON.put("Settings"						,"Einstellungen");
  		germanTextJSON.put("TestNet3"						,"TestNet3");	
  		germanTextJSON.put("Language"						,"Sprache");
@@ -363,15 +368,16 @@ public class Translate
  		germanTextJSON.put("Virtual size"					,"Virtuelle Größe (vB)");
  		germanTextJSON.put("Fee settings"					,"Gebühren Einstellungen");
  		germanTextJSON.put("First output"					,"Erster Ausgang");
- 		germanTextJSON.put("scan QR code"					,"QR-Code Scannen");
+ 		germanTextJSON.put("scan QR code"					,"Scan QR");
  		germanTextJSON.put("feerate high"					,"Höchster Gebührensatz");
+ 		germanTextJSON.put("show QR code"					,"QR-Code anzeigen");
  		germanTextJSON.put("No connect!\n"					,"Keine Verbindung!\n");
  		germanTextJSON.put("mempoolminfee"					,"Minimum erlaubt in Mempool");
  		germanTextJSON.put("open csv file"					,"CSV-Datei öffnen");
  		germanTextJSON.put("Source address"					,"Quell-Adressen   (Tx-Eingänge)");
  		germanTextJSON.put("Fee slider max"					,"Gebühren-Schieberegler Maximalwert");
  		germanTextJSON.put("Fee slider min"					,"Gebühren-Schieberegler Minimalwert");
- 		germanTextJSON.put("open crypt file"				,"Verschlüsselte .crypt Datei öffnen");
+ 		germanTextJSON.put("open crypt file"				,".crypt Datei öffnen");
  		germanTextJSON.put("feerate average"				,"Durchschnittlicher Gebührensatz");
  		germanTextJSON.put("View Transaction"				,"Transaktion anzeigen");
  		germanTextJSON.put("Save Transaction"				,"Transaktion speichern");
@@ -399,6 +405,8 @@ public class Translate
  		germanTextJSON.put("Send signed transaction"		,"Signierte Transaktion senden");
  		germanTextJSON.put("View historical fee rate"		,"Historischen Gebührensatz anzeigen");
  		germanTextJSON.put("Total Value Input = Null"		,"Kein Eingangs-Guthaben");		
+ 		germanTextJSON.put("Only .txn files allowed!"		,"Nur .txn Datei erlaubt!");
+
  		germanTextJSON.put("sliderMax_Language-Array",new JSONArray(new String[]{"Geschätzt in 1 Blöcken", "Geschätzt in 2 Blöcken", "Geschätzt in 3 Blöcken", "Geschätzt in 4 Blöcken", "Geschätzt in 5 Blöcken", "Geschätzt in 6 Blöcken", "Geschätzt in 7 Blöcken", "Geschätzt in 8 Blöcken", "Geschätzt in 9 Blöcken", "Geschätzt in 10 Blöcken"}));
  		germanTextJSON.put("sliderMin_Language-Array",new JSONArray(new String[]{"Minimum erlaubt in Mempool", "Geschätzt in 1000 Blöcken", "Geschätzt in 900 Blöcken", "Geschätzt in 800 Blöcken", "Geschätzt in 700 Blöcken", "Geschätzt in 600 Blöcken", "Geschätzt in 500 Blöcken", "Geschätzt in 400 Blöcken", "Geschätzt in 300 Blöcken", "Geschätzt in 200 Blöcken", "Geschätzt in 100 Blöcken", "0"}));
  		germanTextJSON.put("acceptMax_Language-Array",new JSONArray(new String[]{"Höchster Ø Gebührensatz", "(Höchster Ø Gebührensatz) * 2", "(Höchster Ø Gebührensatz) * 3", "(Höchster Ø Gebührensatz) * 4", "(Höchster Ø Gebührensatz) * 5", "(Höchster Ø Gebührensatz) * 6", "(Höchster Ø Gebührensatz) * 7", "(Höchster Ø Gebührensatz) * 8", "(Höchster Ø Gebührensatz) * 9", "(Höchster Ø Gebührensatz) * 10", "absolutes Maximum"}));
@@ -413,6 +421,7 @@ public class Translate
  		germanTextJSON.put("Create an unsigned transaction"	,"Erstelle eine unsignierte Transaktion");
  		germanTextJSON.put("Get transaction from blockchain","Transaktion aus der Blockchain laden");		
  		germanTextJSON.put("BitcoinCore connection settings","Bitcoin-Core Verbindungseinstellungen");
+ 		germanTextJSON.put("Creates a QR code from any text.","Erstellt einen QR-Code aus einem beliebigen Text.\nZ.B. Bitcoin-Adresse, Transaktion oder irgendetwas anderes, aus dem ein QR-Code erstellt werden soll.");
  		germanTextJSON.put("Password to be used for encryption:" ,"Passwort mit dem verschlüsselt werden soll:");
  		germanTextJSON.put("Tx Error: No correct transaction!\n","Tx Error: Ungültige Transaktion!\n");
  		germanTextJSON.put("Success! Transaction has been send!\n","Erfolgreich! Die Transaktion wurde gesendet!\n");
@@ -420,7 +429,7 @@ public class Translate
  		germanTextJSON.put("Average Fee Rate could not be loaded!\n","Durchschnittlicher Gebührensatz konnte nicht geladen werden.\n");
  		germanTextJSON.put("Which output should the fee be deducted","Von welchem Ausgang soll die Gebühr abgezogen werden");
  		germanTextJSON.put("No address with an available amount found.","Keine Adresse mit verfügbarem Betrag gefunden.");
- 		germanTextJSON.put("Insert signed transactions into this field","Fügen Sie eine signierte Transaktion (Hexa) in dieses Feld ein");
+ 		germanTextJSON.put("Insert signed transactions into this field","Transaktion per \"Drag and Drop\" hineinziehen, oder in Hexa eingeben");
  		germanTextJSON.put("The Fees is higher than 0,001 BTC \nIgnore?","Die Gebühren sind höher als 0,001 BTC \nIgnorieren?");		
  		germanTextJSON.put("This is a test network. Coins have no value!","Dies ist ein Testnetzwerk. Coins haben keinen Wert!");
  		germanTextJSON.put("Calculate Signature Hash\nInput RAW transaction:","Signatur-Hash berechnen\nRAW-Transaktion eingeben:");

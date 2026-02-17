@@ -3,19 +3,18 @@ import java.awt.Color;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import RPC.ConnectRPC;
 import lib3001.btc.Transaktion;
 import lib3001.btc.TxPrinter;
 import lib3001.crypt.Convert;
 import lib3001.qrCode.QrCapture;
-
 import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import javax.swing.JScrollPane;
@@ -24,12 +23,19 @@ import javax.swing.JButton;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 import java.awt.Dimension;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -37,7 +43,7 @@ import javax.swing.JOptionPane;
 
 
 /********************************************************************************************************************
-*	V1.4							 Autor: Mr. Maxwell   							vom 28.12.2025					*
+*	V1.5							 Autor: Mr. Maxwell   							vom 13.02.2026					*
 *	Die GUI (JDialog). Sendet signierte Transaktionen in das Netzwerk per RPC										*
 ********************************************************************************************************************/
 
@@ -61,8 +67,7 @@ public class GUI_PublishTx extends JDialog
 		setBounds(x, y, 1040, 450);
 		setMinimumSize(new Dimension(500,250));
 		setModal(true);
-		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
-		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
+		setIconImage(MyIcons.send.getImage());			
 		
 		JTextPane  	lbl_info 	= new JTextPane();
 		JTextPane 	txt_meld 	= new JTextPane();
@@ -96,7 +101,12 @@ public class GUI_PublishTx extends JDialog
 
 		lbl_info		.setText(GUI.t.t("Signed transactions can be sent to the network here.\nThis action can never be reprimanded.\nCheck the transaction very carefully!"));	
 
-		lbl_info		.setBorder(new EmptyBorder(7,10,7,7));
+		btn_scanQR		.setIcon(MyIcons.qrScan);
+		btn_openTx		.setIcon(MyIcons.loadTx);
+		btn_showTx		.setIcon(MyIcons.viewTx);
+		btn_send		.setIcon(MyIcons.send);
+
+		lbl_info		.setBorder(new EmptyBorder(17,10,10,7));
 		scrollPane		.setBorder(null);
 		txt_tx			.setBorder(new TitledBorder(new LineBorder(GUI.color4), GUI.t.t("Insert signed transactions into this field"), TitledBorder.LEADING, TitledBorder.TOP, GUI.font2, GUI.color3));
 
@@ -105,10 +115,10 @@ public class GUI_PublishTx extends JDialog
 		btn_showTx		.setToolTipText(GUI.t.t("ToolTipText_btn_showTx"));
 		btn_send		.setToolTipText(GUI.t.t("ToolTipText_btn_send"));
 				
-		btn_scanQR		.setPreferredSize(new Dimension(220, 25));
-		btn_openTx		.setPreferredSize(new Dimension(220, 25));
-		btn_showTx		.setPreferredSize(new Dimension(220, 25));
-		btn_send		.setPreferredSize(new Dimension(220, 25));
+		btn_scanQR		.setPreferredSize(new Dimension(140, 30));
+		btn_openTx		.setPreferredSize(new Dimension(140, 30));
+		btn_showTx		.setPreferredSize(new Dimension(140, 30));
+		btn_send		.setPreferredSize(new Dimension(140, 30));
 
 		btn_scanQR		.setMargin(new Insets(0, 0, 0, 0));
 		btn_openTx		.setMargin(new Insets(0, 0, 0, 0));
@@ -142,6 +152,37 @@ public class GUI_PublishTx extends JDialog
 // -------------------------------------------------------------------------- Actions -----------------------------------------------------------------------------		
 		
 		
+	
+		
+	// Signierte Tx per Drag and Drop in das Textfeld ziehen
+	new DropTarget(txt_tx, new DropTargetAdapter() 
+	{
+		public void drop(DropTargetDropEvent event) 
+		{
+			try 
+			{
+				event.acceptDrop(DnDConstants.ACTION_COPY);					
+				Transferable transferable = event.getTransferable();
+				List<File> list = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);										
+				File file = list.get(0);			
+				lbl_file_sigTx.setText(file.getParent());	
+				if (file.getName().endsWith(".txn")) 								// Lässt nur .txn Datein zu.
+				{
+					BufferedReader br = new BufferedReader(new FileReader(file));
+					String str = "";
+					while(br.ready()) str = str +br.readLine();	
+					br.close();								
+					txt_tx.setText(str);
+				}	
+				else
+				{
+					txt_meld.setText(GUI.t.t("Only .txn files allowed!"));
+				}				
+			} 
+			catch (Exception e) {e.printStackTrace();}
+		}
+	});	
+		
 		
 		
 		
@@ -150,25 +191,43 @@ public class GUI_PublishTx extends JDialog
 	{
 		public void actionPerformed(ActionEvent e) 
 		{			
+			frame.setEnabled(false);
+			// @Thread Alle GUI-Anpassungen sind in der EDT!
 			Thread t = new Thread(new Runnable() 
 			{
-				@Override
 				public void run() 
 				{														
 					try
 					{
-						frame.setEnabled(false);
 						QrCapture qr = new QrCapture(frame,"Scan Sign Transaction", getX()+50, getY()+80);	
 						String p2 = qr.getResult();
-						qr.close();								
+						qr.close();		
 						if(p2.equals("")) throw new IOException(GUI.t.t("User abort"));								
-						txt_tx.setText(p2);
+						SwingUtilities.invokeLater(new Runnable() 
+						{	
+							public void run()
+							{
+								txt_tx.setText(p2);								
+							}
+						});
 					}
 					catch(Exception ex) 
 					{
-						txt_meld.setText(ex.getMessage());
-					};	
-					frame.setEnabled(true);
+						SwingUtilities.invokeLater(new Runnable() 
+						{	
+							public void run()
+							{
+								txt_meld.setText(ex.getMessage());
+							}
+						});
+					};			
+					SwingUtilities.invokeLater(new Runnable() 
+					{	
+						public void run()
+						{
+							frame.setEnabled(true);
+						}
+					});
 				}
 			});
 			t.start();	

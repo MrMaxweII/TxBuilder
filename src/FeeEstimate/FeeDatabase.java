@@ -28,7 +28,7 @@ public class FeeDatabase
 
 
 
-/**	Läd die Date, wenn die Datei vorhanden ist. Wenn nicht, passiert nichts und die default Werte werden verwendet.  **/
+/**	Läd die Datei, wenn die Datei vorhanden ist. Wenn nicht, passiert nichts und die default Werte werden verwendet.  **/
 public static void load()
 {
 	File f;
@@ -48,7 +48,7 @@ public static void load()
 			String dateiID = jo.getString("dateiID");
 			String version = jo.getString("version");
 			if(dateiID.equals(FeeDatabase.dateiID)==false) 	throw new FileNotFoundException("The file "+f.getName()+" is an incorrect file!");
-			if(version.equals(GUI.version)==false) 		throw new FileNotFoundException("The file "+f.getName()+" has the wrong version!");		
+			if(version.equals(GUI.version)==false) 			throw new FileNotFoundException("The file "+f.getName()+" has the wrong version!");		
 			data = jo.getJSONObject("data");
 		} 
 		catch (Exception e) 

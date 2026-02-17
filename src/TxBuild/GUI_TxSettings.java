@@ -42,9 +42,8 @@ public class GUI_TxSettings extends JDialog
 		setModal(true);
 		getContentPane().setLayout(null);
 		setMinimumSize(new Dimension(600,250));
-		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
-		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());	
-		
+		setIconImage(MyIcons.txSettings.getImage());			
+			
 		JTextArea 	lbl_info 		= new JTextArea(GUI.t.t("Change the default values only if you know exactly what you're doing!\nIncorrect values can lead to the loss of the coins!"));
 		JTextArea 	lbl_sequence 	= new JTextArea(GUI.t.t("If sequence number is < 0xFFFFFFFF: Makes the transaction input Replace-By-Fee. Default:\"4294967295\" hex: \"ffffffff\""));
 		JTextArea 	lbl_locktime 	= new JTextArea(GUI.t.t("Specifies the time at which the transaction should be executed.\nAt: \"00000000\", immediately."));

@@ -55,7 +55,7 @@ import lib3001.crypt.Convert;
 
 
 /********************************************************************************************************************
-*											 Autor: Mr. Maxwell   							vom 28.12.2025			*
+*	V1.1									 Autor: Mr. Maxwell   								vom 13.02.2026		*
 *	Die GUI (JDialog). Importiert die csv Datei mit den eigenen kontrollieten Bitcoin-Adressen.						*
 *	Zeigt alle Adressen an, die Beträge enthalten und zeigt die gesamt-Summe an										*
 ********************************************************************************************************************/
@@ -89,8 +89,7 @@ public class GUI_ImportCSV extends JDialog
 		setBounds(x, y, 820, 350);
 		setMinimumSize(new Dimension(810,350));
 		setModal(true);
-		if(GUI.btn_testNet.isSelected()) setIconImage(MyIcons.bitcoinLogoTest.getImage());			
-		else 							 setIconImage(MyIcons.bitcoinLogoMain.getImage());		
+		setIconImage(MyIcons.open.getImage());					
 			
 		JMenuBar 	menuBar 	= new JMenuBar();
 		JPanel 		pnl_menu 	= new JPanel();
@@ -111,6 +110,11 @@ public class GUI_ImportCSV extends JDialog
 		btn_encrypt		.setToolTipText(GUI.t.t("ToolTipText_btn_encrypt"));
 		btn_input		.setToolTipText(GUI.t.t("ToolTipText_btn_input"));
 		btn_output		.setToolTipText(GUI.t.t("ToolTipText_btn_output"));		
+		
+		btn_open		.setIcon(MyIcons.csv);
+		btn_open_crypt	.setIcon(MyIcons.openCrypt);
+		btn_encrypt		.setIcon(MyIcons.lock);
+
 		
 		menuBar			.setBackground(GUI.color1);
 		lbl_info		.setForeground(GUI.color4);
@@ -139,9 +143,9 @@ public class GUI_ImportCSV extends JDialog
 		lbl_info		.setBorder(new EmptyBorder(5,5,5,5));
 			
 		menuBar			.setPreferredSize(new Dimension(500, 65));
-		btn_open		.setPreferredSize(new Dimension(250, 22));	
-		btn_open_crypt	.setPreferredSize(new Dimension(250, 22));	
-		btn_encrypt		.setPreferredSize(new Dimension(250, 22));			
+		btn_open		.setPreferredSize(new Dimension(250, 30));	
+		btn_open_crypt	.setPreferredSize(new Dimension(250, 30));	
+		btn_encrypt		.setPreferredSize(new Dimension(250, 30));			
 		btn_cancel		.setPreferredSize(new Dimension(120, 22));	
 		btn_input		.setPreferredSize(new Dimension(240, 22));
 		btn_output		.setPreferredSize(new Dimension(240, 22));
@@ -400,10 +404,9 @@ public class GUI_ImportCSV extends JDialog
 		{
 			if (e.getButton() == MouseEvent.BUTTON1)
 			{
-				// Steuert die Process-Bar
+				// @Thread  Keine relevante GUI-Anpassung in diesem Thread. (Der catch-Zweig wird ignoriert, weil er normalerweise nicht auftritt)
 				Thread thread3 = new Thread(new Runnable() 
 				{
-					@Override
 					public void run() 
 					{
 						ConnectRPC core = new ConnectRPC(TxBuildAction.ip,TxBuildAction.port,TxBuildAction.name,TxBuildAction.pw);
@@ -539,7 +542,6 @@ public class GUI_ImportCSV extends JDialog
 		
 		SwingUtilities.invokeLater(new Runnable() 		// Passt die Größe des Dialoges nachträglich an die Anzahl der Zeilen in der Tabelle an.
 		{
-			@Override
 			public void run() 
 			{			
 				int screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height; 				
@@ -558,16 +560,17 @@ public class GUI_ImportCSV extends JDialog
 	 	btn_open.setVisible(false);
 	 	btn_open_crypt.setVisible(false);
 	 	btn_encrypt.setVisible(false);
-		btn_cancel.setVisible(true);	
+		btn_cancel.setVisible(true);
+		btn_input.setEnabled(false);
+		btn_output.setEnabled(false);	
 		txt_meld.setText(addr.length + " addresses found");	
 		TxBuildAction.ip   = GUI_CoreSettings.txt_ip.getText();
 		TxBuildAction.port = Integer.valueOf(GUI_CoreSettings.txt_port.getText());
 		TxBuildAction.name = GUI_CoreSettings.txt_uName.getText();
 		TxBuildAction.pw   = GUI_CoreSettings.txt_pw.getText();
-		
+		// @Thread Alle GUI-Anpassungen sind in der EDT!
 		Thread thread1 = new Thread(new Runnable() 
 		{
-			@Override
 			public void run() 
 			{				
 				ConnectRPC core = new ConnectRPC(TxBuildAction.ip,TxBuildAction.port,TxBuildAction.name,TxBuildAction.pw);
@@ -581,40 +584,79 @@ public class GUI_ImportCSV extends JDialog
 				}
 				catch(Exception ex)
 				{
-					ex.printStackTrace();
-					txt_meld.setText(ex.getMessage());
+					SwingUtilities.invokeLater(new Runnable() 
+					{
+						public void run()
+						{
+							ex.printStackTrace();
+							txt_meld.setText(ex.getMessage());
+						}
+					});
 				}
-				btn_open.setVisible(true);
-			 	btn_open_crypt.setVisible(true);
-			 	btn_encrypt.setVisible(true);
-				btn_cancel.setVisible(false);
+				SwingUtilities.invokeLater(new Runnable() 
+				{
+					public void run()
+					{
+						int count = 0;
+						if(table!=null) count = table.getModel().getRowCount();
+						if(count > 0) // Wenn mindestens eine Zeile in der Tabelle steht, werden die unteren Buttons aktiviert, sonnst nicht.
+						{
+							btn_input		.setEnabled(true);
+							btn_output		.setEnabled(true);
+						}
+						else
+						{
+							btn_input		.setEnabled(false);
+							btn_output		.setEnabled(false);
+						}
+						btn_open.setVisible(true);
+					 	btn_open_crypt.setVisible(true);
+					 	btn_encrypt.setVisible(true);
+						btn_cancel.setVisible(false);
+					}
+				});	
 			}
 		});
 				
 		
 		
+		
+		
+		lbl_progress.setVisible(true);
+		progressBar.setVisible(true);
 		// Steuert die Process-Bar
+		// @Thread Alle GUI-Anpassungen sind in der EDT!
 		Thread thread2 = new Thread(new Runnable() 
 		{
-			@Override
 			public void run() 
 			{
 				ConnectRPC core = new ConnectRPC(TxBuildAction.ip,TxBuildAction.port,TxBuildAction.name,TxBuildAction.pw);
 				core.setTimeOut(Integer.valueOf(GUI_CoreSettings.txt_timeOut.getText()));
-				lbl_progress.setVisible(true);
-				progressBar.setVisible(true);
 				for(int i=0; i<600; i++ )
 				{
 					try 
 					{
 						Thread.sleep(1000);
 						JSONObject jo = core.get_scantxoutset("status", new String[] {""}, new String[] {""});
-						progressBar.setValue(jo.getJSONObject("result").getInt("progress"));
+						int value = jo.getJSONObject("result").getInt("progress");
+						SwingUtilities.invokeLater(new Runnable() 
+						{
+							public void run()
+							{
+								progressBar.setValue(value);
+							}
+						});
 					}
 					catch(Exception ex)
 					{
-						lbl_progress.setVisible(false);
-						progressBar.setVisible(false);
+						SwingUtilities.invokeLater(new Runnable() 
+						{
+							public void run()
+							{
+								lbl_progress.setVisible(false);
+								progressBar.setVisible(false);
+							}
+						});
 						break;
 					}
 				}
@@ -627,47 +669,45 @@ public class GUI_ImportCSV extends JDialog
 	
 
 	//	Wertet das Ergebnis vom Core aus und und schreibt die Daten in die GUI
+	//	Muss in die EDT, da die Methode von einem eigenem Thread ausgeführt wird.
 	private void scantxoutsetResult(JSONObject jo) throws JSONException
 	{	
-		try{txt_meld.setText("BitcoinCore Error:\n"+ jo.getJSONObject("error").getString("message"));}   		// Gibt Fehler-Meldungen vom Core aus
-		catch(Exception e) {};
-		try
+		SwingUtilities.invokeLater(new Runnable() 
 		{
-			JSONObject jo_result = jo.getJSONObject("result");													// Das Ergebnis von Core, als JSON-Object
-			if(jo_result.getBoolean("success") == true) 														// Wenn Ergebnis fehlerfrei abgeschlossen ist.
+			public void run() 
 			{
-				LinkedHashMap<String,Double>hm = new LinkedHashMap<String,Double>();							// In die HashMap werden die Adressen und zugehörigen Beträge gespeichert. "LinkedHashMap" bedeutet, dass die Reihenfolge der Elemente bei behalten wird.
-				txt_totalValue.setText(String.format("%.8f", jo_result.getDouble("total_amount")));				// Gesamtbetrag aller Adressen
-				JSONArray unspents = jo_result.getJSONArray("unspents");										// Nicht ausgegebene Inputs als JSONArray
-				for(int i=0;i<unspents.length();i++)
+				try{txt_meld.setText("BitcoinCore Error:\n"+ jo.getJSONObject("error").getString("message"));}   		// Gibt Fehler-Meldungen vom Core aus
+				catch(Exception e) {};
+				try
 				{
-					JSONObject jo_el =  unspents.getJSONObject(i);
-					String addr = jo_el.getString("desc");														// Die Bitcoin Adresse, mit angehängten Daten
-					addr = addr.substring(addr.indexOf("(")+1, addr.indexOf(")"));								// Die reine Bitcoin Adresse. (Angehängte Daten werden entfernt)
-					hm.put(addr, hm.getOrDefault(addr, 0.0) + jo_el.getDouble("amount"));						// Speichert Addresse mit Betrag in die HashMap und addiert dabei die Beträge bei mehrfachen gleichen Adressen.
-				}																								// In der LinkedHashMap (hm) befinden sich nun alle Adressen mit den zugehörigen Beträgen. Mehrfache Adressen wurden zusammen-verrechnet.
-				String[][] tab = new String[hm.size()][2];														// 2Dim String-Array wird hier angelegt und später der Tabelle übergeben. Entspricht im Prinzip der Tabelle.
-				Object[] keys = hm.keySet().toArray();															// Mit "keys" sind die BTC-Adressen gemeint, die als Schlüssel in der HashMap fungieren. Die Schlüssel müssen aufgelistet werden um sie anschließend in der Schleife durchlaufen zu können.
-				for(int i=0; i<keys.length;i++)																	// Damit wird die HashMap in die Tabelle übertragen.
-				{
-					tab[i][0] = (String) keys[i];																// Schreibt die BTC-Adressen (keys) in die Tabelle				
-					tab[i][1] = String.format("%.8f",(Math.round(hm.get(tab[i][0])*100000000.0)/100000000.0));	// Schreibt die Beträge in die Tabelle, die Beträge werden noch richtig formatiert.
-				}
-				setTable(tab);
-				if(keys.length>0)
-				{
-					btn_input		.setEnabled(true);
-					btn_output		.setEnabled(true);
-					lbl_info		.setText(GUI.t.t("Mark one or more lines and select them as the input or output address."));
-				}
-				else 
-				{
-					btn_input		.setEnabled(false);
-					btn_output		.setEnabled(false);
-					txt_meld.setText(GUI.t.t("No address with an available amount found."));
-				}
+					JSONObject jo_result = jo.getJSONObject("result");													// Das Ergebnis von Core, als JSON-Object
+					if(jo_result.getBoolean("success") == true) 														// Wenn Ergebnis fehlerfrei abgeschlossen ist.
+					{
+						LinkedHashMap<String,Double>hm = new LinkedHashMap<String,Double>();							// In die HashMap werden die Adressen und zugehörigen Beträge gespeichert. "LinkedHashMap" bedeutet, dass die Reihenfolge der Elemente bei behalten wird.
+						txt_totalValue.setText(String.format("%.8f", jo_result.getDouble("total_amount")));				// Gesamtbetrag aller Adressen
+						JSONArray unspents = jo_result.getJSONArray("unspents");										// Nicht ausgegebene Inputs als JSONArray
+						for(int i=0;i<unspents.length();i++)
+						{
+							JSONObject jo_el =  unspents.getJSONObject(i);
+							String addr = jo_el.getString("desc");														// Die Bitcoin Adresse, mit angehängten Daten
+							addr = addr.substring(addr.indexOf("(")+1, addr.indexOf(")"));								// Die reine Bitcoin Adresse. (Angehängte Daten werden entfernt)
+							hm.put(addr, hm.getOrDefault(addr, 0.0) + jo_el.getDouble("amount"));						// Speichert Addresse mit Betrag in die HashMap und addiert dabei die Beträge bei mehrfachen gleichen Adressen.
+						}																								// In der LinkedHashMap (hm) befinden sich nun alle Adressen mit den zugehörigen Beträgen. Mehrfache Adressen wurden zusammen-verrechnet.
+						String[][] tab = new String[hm.size()][2];														// 2Dim String-Array wird hier angelegt und später der Tabelle übergeben. Entspricht im Prinzip der Tabelle.
+						Object[] keys = hm.keySet().toArray();															// Mit "keys" sind die BTC-Adressen gemeint, die als Schlüssel in der HashMap fungieren. Die Schlüssel müssen aufgelistet werden um sie anschließend in der Schleife durchlaufen zu können.
+						for(int i=0; i<keys.length;i++)																	// Damit wird die HashMap in die Tabelle übertragen.
+						{
+							tab[i][0] = (String) keys[i];																// Schreibt die BTC-Adressen (keys) in die Tabelle				
+							tab[i][1] = String.format("%.8f",(Math.round(hm.get(tab[i][0])*100000000.0)/100000000.0));	// Schreibt die Beträge in die Tabelle, die Beträge werden noch richtig formatiert.
+						}
+						setTable(tab);
+						if(keys.length>0) 	lbl_info.setText(GUI.t.t("Mark one or more lines and select them as the input or output address."));
+						else 				txt_meld.setText(GUI.t.t("No address with an available amount found."));		
+					}
+					else txt_meld.setText(GUI.t.t("User abort"));	
+				}   
+				catch(Exception e) {e.printStackTrace();};	
 			}
-		}   
-		catch(Exception e) {e.printStackTrace();};	
+		});				
 	}
 }
